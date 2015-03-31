@@ -3,21 +3,23 @@
 
 ## Purpose
 
-Nit is a framework for investigating Git-like storage systems. It aims to abstract the basic operations of such a system using a component model.
+Nit is a framework for experimenting with Git-like versioned storage systems. It aims to abstract the basic operations of such a system using a component model. It supports the following high-level operations:
+
+ * `init`: initialize a repository
+ * `add`: include a file in the current working tree
+ * `commit`: save the current state of the working tree
+ * `checkout`: restore the working tree to a previous state
+
+As with Git, these operations are implemented in terms of lower-level operations.
 
 
-### Plumbing
+## Components
 
-In Git, fundamental operations are implemented with low-level subcommands collectively referred to as "plumbling" (as opposed to porcelain, the high-level commands that most users need to use).
+A `Repository` object doesn't actually do a whole lot. It defines operations at a high level and then relies on parameterizable component objects for specific behavior.
 
-Examples of plumbing commands:
-
-1. ls-files
-1. cat-file
-1. hash-object
-1. 
-
-
-### Porcelain
-
-
+ * `SerializationStrategy`: converts objects into bytes
+ * `StorageStrategy`: saves and retrieves objects to and from the repository
+ * `WorkingTreeStrategy`: determines which files are in the working tree
+ * `IgnoreStrategy`: determines which files in the working tree should be ignored
+ * ``: 
+ 
