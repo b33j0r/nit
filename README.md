@@ -18,7 +18,7 @@ As with Git, these operations are implemented in terms of lower-level operations
 A `Repository` object doesn't actually do a whole lot. It defines operations at a high level and then relies on parameterizable component objects for specific behavior.
 
  * `SerializationStrategy`: converts objects into bytes
- * `StorageStrategy`: saves and retrieves objects to and from the repository
+ * `BaseStorageStrategy`: saves and retrieves objects to and from the repository
  * `WorkingTreeStrategy`: determines which files are in the working tree
  * `IgnoreStrategy`: determines which files in the working tree should be ignored
  * ``: 

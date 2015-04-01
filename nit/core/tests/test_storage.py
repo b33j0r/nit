@@ -1,17 +1,20 @@
 #! /usr/bin/env python
 """
 """
-import os
-from unittest import TestCase
+from nit.core.tests.util import NitTestCase
 from nit.core.objects import BaseBlob
-from nit.core.repository import Repository
 from nit.core.storage import NitStorageStrategy
 
-class TestBlobStorage(TestCase):
+class TestBlobStorage(NitTestCase):
+
     """
     """
+
     def test_blob_should_get_the_same_string_it_puts(self):
-        test_str = "This is only a test"
+        """
+        """
+
+        test_str = "This is only a test\n"
 
         project_dir_path = "/Users/brjorgensen/nit_test_proj"
         storage = NitStorageStrategy(project_dir_path)

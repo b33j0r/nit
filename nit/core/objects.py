@@ -6,29 +6,61 @@ import hashlib
 
 class BaseObject:
     """
+    An object that can be stored in a repository.
     """
 
     @property
     def key(self):
+        """
+        The identifier used to retrieve the same object using `get`.
+        """
         raise NotImplementedError("key")
 
     def put(self, storage):
+        """
+        Accept method for a storage visitor storing the object.
+
+        Should call the appropriate put_ method on `storage`
+        with `self` as the only argument.
+        """
         raise NotImplementedError("put")
 
     @classmethod
     def get(cls, storage, key):
+        """
+        Accept method for a storage visitor retrieving an object.
+
+        Should call the appropriate method on `storage` with
+        `self` and `key` as the arguments and return the result.
+        """
         raise NotImplementedError("get")
 
     def serialize(self, serializer):
+        """
+        Accept method for a serialization visitor storing the object.
+
+        Should call a sequence of appropriate methods on `serializer`
+        such as `write_bytes`, `write_string`, etc.
+        """
         raise NotImplementedError("serialize")
 
     @classmethod
     def deserialize(cls, deserializer):
+        """
+        Accept method for a serialization visitor retrieving an object.
+
+        Should call a sequence of appropriate methods on `serializer`
+        such as `read_bytes`, `read_string`, etc.
+
+        :return (cls): Deserialized instance of this class
+        """
         raise NotImplementedError("deserialize")
 
 
 class BaseBlob(BaseObject):
     """
+    A Binary Large OBject, usually a representation of the raw bytes
+    of a file in the filesystem.
     """
 
     def __init__(self, content):

@@ -17,10 +17,13 @@ class Repository:
         serialization_cls=BaseSerializationStrategy
     ):
         self.storage = storage_cls(project_dir_path, serialization_cls)
-        self.stage = staging_cls(self.storage)
+        # self.stage = staging_cls(self.storage)
 
     def init(self, force=False):
         self.storage.init(force=force)
+
+    def destroy(self):
+        self.storage.destroy()
 
     def add(self, relative_file_path):
         self.stage.add(relative_file_path)

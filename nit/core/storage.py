@@ -3,10 +3,11 @@
 """
 import os
 import shutil
+from nit.core.errors import NitUserError
 from nit.core.serialization import BaseSerializationStrategy
 
 
-class StorageStrategy:
+class BaseStorageStrategy:
     """
     """
 
@@ -34,15 +35,16 @@ class StorageStrategy:
         raise NotImplementedError("get_blob")
 
 
-class NitStorageStrategy(StorageStrategy):
+class NitStorageStrategy(BaseStorageStrategy):
+
     """
     """
 
     def __init__(
         self,
         project_dir_path,
-        repo_dir_name=".nit",
-        serialization_cls=BaseSerializationStrategy
+        serialization_cls=BaseSerializationStrategy,
+        repo_dir_name=".nit"
     ):
         super().__init__(project_dir_path, serialization_cls)
         self._repo_dir_name = repo_dir_name
@@ -56,30 +58,55 @@ class NitStorageStrategy(StorageStrategy):
         return os.path.join(self.project_dir_path, self.repo_dir_name)
 
     @property
-    def blob_dir_name(self):
-        return "blobs"
+    def object_dir_name(self):
+        return "objects"
 
     @property
-    def blob_dir_path(self):
-        return os.path.join(self.repo_dir_path, self.blob_dir_name)
+    def object_dir_path(self):
+        return os.path.join(self.repo_dir_path, self.object_dir_name)
+
+    def get_object_path(self, key):
+        return self.object_dir_path, key
 
     def init(self, force=False):
+        self._init_verify_repo_dir(force)
+        self._init_dir_structure()
+
+    def destroy(self):
+        shutil.rmtree(self.repo_dir_path, ignore_errors=True)
+
+    def _init_dir_structure(self):
+        os.makedirs(self.repo_dir_path)
+        os.makedirs(self.object_dir_path, exist_ok=True)
+
+    def _init_verify_repo_dir(self, force):
         if os.path.exists(self.repo_dir_path):
             if force:
-                shutil.rmtree(self.repo_dir_path)
+                self.destroy()
             else:
-                # TODO: needs specific exceptions
-                raise Exception("'{}' already exists!".format(self.repo_dir_path))
-        os.makedirs(self.repo_dir_path)
-        os.makedirs(self.blob_dir_path, exist_ok=True)
+                raise NitUserError(
+                    "'{}' already exists!".format(self.repo_dir_path)
+                )
+
+    def put_object(self, obj):
+        obj_dir_path, obj_file_path = self.get_object_path(obj.key)
+        os.makedirs(obj_dir_path, exist_ok=True)
+        blob_file_path = os.path.join(obj_dir_path, obj_file_path)
+
+        with open(blob_file_path, 'wb') as f:
+            s = self._serialization_cls(f)
+            obj.serialize(s)
+
+    def get_object(self, obj_cls, key):
+        blob_dir_path, blob_file_name = self.get_object_path(key)
+        blob_file_path = os.path.join(blob_dir_path, blob_file_name)
+
+        with open(blob_file_path, 'rb') as f:
+            s = self._serialization_cls(f)
+            return obj_cls.deserialize(s)
 
     def put_blob(self, blob):
-        blob_file_path = os.path.join(self.blob_dir_path, blob.key)
-        with open(blob_file_path, 'wb') as f:
-            f.write(blob.content)
+        self.put_object(blob)
 
     def get_blob(self, blob_cls, key):
-        blob_file_path = os.path.join(self.blob_dir_path, key)
-        with open(blob_file_path, 'rb') as f:
-            content = f.read()
-            return blob_cls(content)
+        return self.get_object(blob_cls, key)
