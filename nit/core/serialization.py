@@ -39,12 +39,12 @@ class Serializer(metaclass=ABCMeta):
     def read_bytes(self, n=None):
         return self.stream.read(n)
 
-    def read_bytes_until(self, delimiter=b"\0"):
+    def read_bytes_until(self, terminator=b"\0"):
         byte_string = []
 
         while True:
             last_byte = self.stream.read(1)
-            if last_byte in [delimiter, b""]:
+            if last_byte in [terminator, b""]:
                 break
             byte_string.append(last_byte)
 
@@ -92,8 +92,8 @@ class NitSerializer(Serializer):
         obj_type, obj_len = header.split(" ")
         obj_len = int(obj_len)
         if obj_type == "blob":
-            from nit.core.storage import StorableBlob
-            return self.deserialize_blob(StorableBlob)
+            from nit.core.storage import NitBlob
+            return self.deserialize_blob(NitBlob)
         raise NotImplementedError(
             "Unknown object type '{}'".format(obj_type)
         )

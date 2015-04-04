@@ -5,7 +5,7 @@ import io
 from unittest import TestCase
 
 from nit.core.serialization import NitSerializer
-from nit.core.storage import StorableBlob
+from nit.core.storage import NitBlob
 
 class NitSerializerTests(TestCase):
 
@@ -41,7 +41,7 @@ class NitSerializerTests(TestCase):
         self.assertEqual(expected_b, b)
 
     def test_serialize_then_deserialize(self):
-        blob = StorableBlob(self.HELLO)
+        blob = NitBlob(self.HELLO)
         self.serializer.serialize(blob)
 
         self.stream.seek(0)

@@ -1,9 +1,9 @@
 #! /usr/bin/env python
 """
 """
+from nit.core.serialization import NitSerializer
 
-from nit.core.storage import NitStorageStrategy
-from nit.core.serialization import BaseSerializationStrategy
+from nit.core.storage import NitStorage
 
 
 class Repository:
@@ -12,15 +12,15 @@ class Repository:
     def __init__(
         self,
         project_dir_path,
-        storage_cls=NitStorageStrategy,
+        storage_cls=NitStorage,
         staging_cls=None,
-        serialization_cls=BaseSerializationStrategy
+        serialization_cls=NitSerializer
     ):
         self.storage = storage_cls(project_dir_path, serialization_cls)
         # self.stage = staging_cls(self.storage)
 
     def init(self, force=False):
-        self.storage.init(force=force)
+        self.storage.create(force=force)
 
     def destroy(self):
         self.storage.destroy()

@@ -2,8 +2,7 @@
 """
 """
 from nit.core.tests.util import NitTestCase
-from nit.core.objects import BaseBlob
-from nit.core.storage import NitStorageStrategy
+from nit.core.storage import NitStorage, NitBlob
 
 class TestBlobStorage(NitTestCase):
 
@@ -17,11 +16,11 @@ class TestBlobStorage(NitTestCase):
         test_str = "This is only a test\n"
 
         project_dir_path = "/Users/brjorgensen/nit_test_proj"
-        storage = NitStorageStrategy(project_dir_path)
-        storage.init(force=True)
+        storage = NitStorage(project_dir_path)
+        storage.create(force=True)
 
-        test_blob = BaseBlob(test_str.encode())
-        storage.put_blob(test_blob)
+        test_blob = NitBlob(test_str.encode())
+        storage.put(test_blob)
 
-        actual_blob = BaseBlob.get(storage, test_blob.key)
+        actual_blob = storage.get(test_blob.key)
         assert actual_blob.content.decode() == test_str

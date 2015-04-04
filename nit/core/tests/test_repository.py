@@ -4,7 +4,6 @@
 import os
 from nit.core.objects import BaseBlob
 from nit.core.repository import Repository
-from nit.core.storage import NitStorageStrategy
 from nit.core.tests.util import NitTestCase
 
 

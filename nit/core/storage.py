@@ -1,20 +1,19 @@
 #! /usr/bin/env python
 """
 """
-import hashlib
-
 import os
+import hashlib
 import shutil
 from abc import ABCMeta, abstractmethod, abstractclassmethod, abstractproperty
 
 from nit.core.errors import NitUserError
-from nit.core.serialization import Serializable
+from nit.core.serialization import Serializable, NitSerializer
 
 
 class Storable(Serializable, metaclass=ABCMeta):
 
     """
-    Something that can be stored, such as a stream or a commit
+    Something that can be stored, such as a file or a commit
     """
 
     @abstractproperty
@@ -25,7 +24,7 @@ class Storable(Serializable, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def put(self, storage):
+    def accept_put(self, storage):
         """
         Accept method for a storage visitor storing the object.
 
@@ -35,7 +34,7 @@ class Storable(Serializable, metaclass=ABCMeta):
         pass
 
     @abstractclassmethod
-    def get(cls, storage, key):
+    def accept_get(cls, storage, key):
         """
         Accept method for a storage visitor retrieving an object.
 
@@ -44,7 +43,16 @@ class Storable(Serializable, metaclass=ABCMeta):
         """
         pass
 
-class StorableBlob(Storable):
+    @abstractmethod
+    def accept_serializer(self, serializer):
+        pass
+
+    @abstractmethod
+    def accept_deserializer(cls, deserializer):
+        pass
+
+
+class NitBlob(Storable):
 
     """
     """
@@ -54,21 +62,22 @@ class StorableBlob(Storable):
         self._content_len = len(self.content)
 
     @property
-    def key(self):
-        return hashlib.sha1(self.content).hexdigest()
+    def content(self):
+        return self._content_bytes
 
     def __len__(self):
         return self._content_len
 
     @property
-    def content(self):
-        return self._content_bytes
+    def key(self):
+        sha1 = hashlib.sha1(self.content).hexdigest()
+        return sha1
 
-    def put(self, storage):
+    def accept_put(self, storage):
         storage.put_blob(self)
 
     @classmethod
-    def get(cls, storage, key):
+    def accept_get(cls, storage, key):
         storage.get_blob(cls, key)
 
     def accept_serializer(self, serializer):
@@ -79,11 +88,46 @@ class StorableBlob(Storable):
         deserializer.deserialize_blob(cls)
 
 
-class BaseStorageStrategy:
+class Storage(metaclass=ABCMeta):
+
     """
     """
 
-    def __init__(self, project_dir_path, serialization_cls):
+    @abstractmethod
+    def create(self, force=False):
+        pass
+
+    @abstractmethod
+    def destroy(self, ignore_errors=True):
+        pass
+
+    @abstractmethod
+    def put(self, storable):
+        pass
+
+    @abstractmethod
+    def get(self, key):
+        pass
+
+    @abstractmethod
+    def put_blob(self, blob):
+        pass
+
+    @abstractmethod
+    def get_blob(self, key):
+        pass
+
+
+class NitStorage(Storage):
+    """
+    """
+
+    def __init__(
+        self,
+        project_dir_path,
+        serialization_cls=NitSerializer,
+        repo_dir_name=".nit"
+    ):
         if not os.path.exists(project_dir_path):
             raise NitUserError(
                 "Project directory '{}' does not exist".format(
@@ -96,8 +140,61 @@ class BaseStorageStrategy:
                     project_dir_path
                 )
             )
+
+        self._repo_dir_name = repo_dir_name
         self._project_dir_path = project_dir_path
         self._serialization_cls = serialization_cls
+
+    def create(self, force=False):
+        """
+        Initialize the repository within the project directory
+
+        :param force: Delete existing repository first, if found
+        """
+        self._create_verify_repo_dir(force)
+        self._create_dir_structure()
+
+    def _create_dir_structure(self):
+        os.makedirs(self.repo_dir_path)
+        os.makedirs(self.object_dir_path, exist_ok=True)
+
+    def _create_verify_repo_dir(self, force):
+        if os.path.exists(self.repo_dir_path):
+            if force:
+                self.destroy()
+            else:
+                raise NitUserError(
+                    "'{}' already exists!".format(self.repo_dir_path)
+                )
+
+    def destroy(self, ignore_errors=True):
+        shutil.rmtree(self.repo_dir_path, ignore_errors=ignore_errors)
+
+    def put(self, obj):
+        obj.accept_put(self)
+
+    def get(self, key):
+        return self.get_blob(key)
+
+    def put_blob(self, blob):
+        obj_dir_path, obj_file_path = self.get_object_path(blob.key)
+        os.makedirs(obj_dir_path, exist_ok=True)
+        blob_file_path = os.path.join(obj_dir_path, obj_file_path)
+
+        with open(blob_file_path, 'wb') as f:
+            s = self._serialization_cls(f)
+            s.serialize(blob)
+
+    def get_blob(self, key):
+        blob_dir_path, blob_file_name = self.get_object_path(key)
+        blob_file_path = os.path.join(blob_dir_path, blob_file_name)
+
+        if not os.path.exists(blob_file_path):
+            raise NitUserError("Object '{}' is unknown".format(key))
+
+        with open(blob_file_path, 'rb') as f:
+            s = self._serialization_cls(f)
+            return s.deserialize()
 
     @property
     def project_dir_path(self):
@@ -105,37 +202,6 @@ class BaseStorageStrategy:
         The absolute path of the project directory
         """
         return self._project_dir_path
-
-    def init(self, force=False):
-        """
-        Initialize the repository within the project directory
-
-        :param force: Delete existing repository first, if found
-        """
-        raise NotImplementedError("init")
-
-    def put(self, obj):
-        obj.put(self)
-
-    def put_blob(self, blob):
-        raise NotImplementedError("put_blob")
-
-    def get_blob(self, blob_cls, key):
-        raise NotImplementedError("get_blob")
-
-
-class NitStorageStrategy(BaseStorageStrategy):
-    """
-    """
-
-    def __init__(
-        self,
-        project_dir_path,
-        serialization_cls=None,
-        repo_dir_name=".nit"
-    ):
-        super().__init__(project_dir_path, serialization_cls)
-        self._repo_dir_name = repo_dir_name
 
     @property
     def repo_dir_name(self):
@@ -156,26 +222,6 @@ class NitStorageStrategy(BaseStorageStrategy):
     def get_object_path(self, key):
         return self.object_dir_path, key
 
-    def init(self, force=False):
-        self._init_verify_repo_dir(force)
-        self._init_dir_structure()
-
-    def destroy(self, ignore_errors=True):
-        shutil.rmtree(self.repo_dir_path, ignore_errors=ignore_errors)
-
-    def _init_dir_structure(self):
-        os.makedirs(self.repo_dir_path)
-        os.makedirs(self.object_dir_path, exist_ok=True)
-
-    def _init_verify_repo_dir(self, force):
-        if os.path.exists(self.repo_dir_path):
-            if force:
-                self.destroy()
-            else:
-                raise NitUserError(
-                    "'{}' already exists!".format(self.repo_dir_path)
-                )
-
     def __contains__(self, key):
         blob_dir_path, blob_file_name = self.get_object_path(key)
         blob_file_path = os.path.join(blob_dir_path, blob_file_name)
@@ -183,29 +229,3 @@ class NitStorageStrategy(BaseStorageStrategy):
         if not os.path.exists(blob_file_path):
             return False
         return True
-
-    def put_object(self, obj):
-        obj_dir_path, obj_file_path = self.get_object_path(obj.key)
-        os.makedirs(obj_dir_path, exist_ok=True)
-        blob_file_path = os.path.join(obj_dir_path, obj_file_path)
-
-        with open(blob_file_path, 'wb') as f:
-            s = self._serialization_cls(f)
-            obj.serialize(s)
-
-    def get_object(self, obj_cls, key):
-        blob_dir_path, blob_file_name = self.get_object_path(key)
-        blob_file_path = os.path.join(blob_dir_path, blob_file_name)
-
-        if not os.path.exists(blob_file_path):
-            raise NitUserError("Object '{}' is unknown".format(key))
-
-        with open(blob_file_path, 'rb') as f:
-            s = self._serialization_cls(f)
-            return obj_cls.deserialize(s)
-
-    def put_blob(self, blob):
-        self.put_object(blob)
-
-    def get_blob(self, blob_cls, key):
-        return self.get_object(blob_cls, key)
