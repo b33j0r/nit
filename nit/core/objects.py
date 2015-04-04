@@ -60,7 +60,7 @@ class BaseObject:
 class BaseBlob(BaseObject):
     """
     A Binary Large OBject, usually a representation of the raw bytes
-    of a file in the filesystem.
+    of a stream in the filesystem.
     """
 
     def __init__(self, content):
