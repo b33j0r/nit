@@ -4,16 +4,19 @@
 import io
 from unittest import TestCase
 
-from nit.core.serialization import NitSerializer
-from nit.core.storage import NitBlob
+from nit.core.serialization import BaseSerializer
+from nit.components.nit.serialization import NitSerializer
+from nit.components.nit.blob import NitBlob
+from nit.core.tests.util import NitTestCase
 
-class NitSerializerTests(TestCase):
+
+class TestBaseSerializer(NitTestCase):
 
     """
     """
 
     HELLO = b"hello"
-    SERIALIZER_CLS = NitSerializer
+    SERIALIZER_CLS = BaseSerializer
 
     def setUp(self):
         self.stream = io.BytesIO()
@@ -40,7 +43,15 @@ class NitSerializerTests(TestCase):
         b = self.serializer.read_bytes_until()
         self.assertEqual(expected_b, b)
 
-    def test_serialize_then_deserialize(self):
+
+class TestNitSerializer(TestBaseSerializer):
+
+    """
+    """
+
+    SERIALIZER_CLS = NitSerializer
+
+    def test_serialize_then_deserialize_blob(self):
         blob = NitBlob(self.HELLO)
         self.serializer.serialize(blob)
 

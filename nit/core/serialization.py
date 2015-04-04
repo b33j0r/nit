@@ -9,6 +9,32 @@ from abc import (
 )
 
 
+class Serializable(metaclass=ABCMeta):
+
+    """
+    """
+
+    @abstractmethod
+    def accept_serializer(self, serializer):
+        """
+        Accept method for a serializer visitor serializing an object.
+
+        Should call the appropriate method on `serializer` with
+        `self` as the only argument.
+        """
+        pass
+
+    @abstractclassmethod
+    def accept_deserializer(cls, deserializer):
+        """
+        Accept method for a deserializer visitor deserializing an object.
+
+        Should call the appropriate method on `deserializer` with
+        no arguments and return the result.
+        """
+        pass
+
+
 class Serializer(metaclass=ABCMeta):
 
     """
@@ -25,13 +51,63 @@ class Serializer(metaclass=ABCMeta):
     def deserialize(self):
         pass
 
+
+class SerializerFactory(metaclass=ABCMeta):
+
+    """
+    Creates a serializer appropriate for a given `Serializable`,
+    or a deserializer appropriate for a given byte stream.
+    """
+
     @abstractmethod
-    def serialize_blob(self, blob):
+    def get_serializer(self, serializable):
         pass
 
     @abstractmethod
-    def deserialize_blob(self, blob_cls):
+    def get_deserializer(self, stream):
         pass
+
+
+class BaseSerializer(Serializer):
+
+    """
+    """
+
+    def serialize(self, serializable):
+        serializable.accept_serializer(self)
+
+    def deserialize(self):
+        obj_len, obj_type = self.deserialize_signature()
+
+        if obj_type == "blob":
+            return self.deserialize_blob()
+        else:
+            raise NotImplementedError(
+                "Unknown object type '{}'".format(obj_type)
+            )
+
+    def serialize_blob(self, blob):
+        raise NotImplementedError("serialize_blob")
+
+    def deserialize_blob(self):
+        raise NotImplementedError("deserialize_blob")
+
+    def serialize_signature(self, obj_type, obj_len):
+        self.write_string(
+            "{obj_type} {obj_len}\0".format(
+                obj_type=obj_type,
+                obj_len=obj_len
+            ),
+            encoding="ascii"
+        )
+
+    def deserialize_signature(self):
+        signature = self.read_bytes_until().decode(
+            encoding="ascii"
+        )
+        obj_type, obj_len = signature.split(" ")
+        obj_len = int(obj_len)
+        return obj_len, obj_type
 
     def write_bytes(self, b):
         self.stream.write(b)
@@ -60,52 +136,5 @@ class Serializer(metaclass=ABCMeta):
 
     def read_string(self, encoding="utf-8"):
         b = self.read_bytes()
-        return b.decode(encoding=encoding)
-
-
-class Serializable(metaclass=ABCMeta):
-
-    """
-    """
-
-    @abstractmethod
-    def accept_serializer(self, serializer):
-        pass
-
-    @abstractclassmethod
-    def accept_deserializer(cls, deserializer):
-        pass
-
-
-class NitSerializer(Serializer):
-
-    """
-    """
-
-    def serialize(self, serializable):
-        serializable.accept_serializer(self)
-
-    def deserialize(self):
-        header = self.read_bytes_until().decode(
-            encoding="ascii"
-        )
-        obj_type, obj_len = header.split(" ")
-        obj_len = int(obj_len)
-        if obj_type == "blob":
-            from nit.core.storage import NitBlob
-            return self.deserialize_blob(NitBlob)
-        raise NotImplementedError(
-            "Unknown object type '{}'".format(obj_type)
-        )
-
-    def serialize_blob(self, blob):
-        self.write_string(
-            "blob {blob_len}\0".format(
-                blob_len=len(blob)
-            ),
-            encoding="ascii"
-        )
-        self.write_bytes(blob.content)
-
-    def deserialize_blob(self, blob_cls):
-        return blob_cls(self.read_bytes())
+        s = b.decode(encoding=encoding)
+        return s

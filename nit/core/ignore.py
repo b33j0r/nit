@@ -2,6 +2,16 @@
 """
 """
 import os
+from abc import ABCMeta
+
+
+class FileIgnorer(metaclass=ABCMeta):
+
+    """
+    """
+
+    def should_ignore(self, file_path):
+        pass
 
 
 class IgnoreStrategy:

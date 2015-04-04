@@ -1,35 +1,27 @@
 #! /usr/bin/env python
 """
 """
-from nit.core.serialization import NitSerializer
+from abc import abstractmethod
+from abc import ABCMeta
 
-from nit.core.storage import NitStorage
 
+class Repository(metaclass=ABCMeta):
+    @abstractmethod
+    def create(self, force):
+        pass
 
-class Repository:
-    """
-    """
-    def __init__(
-        self,
-        project_dir_path,
-        storage_cls=NitStorage,
-        staging_cls=None,
-        serialization_cls=NitSerializer
-    ):
-        self.storage = storage_cls(project_dir_path, serialization_cls)
-        # self.stage = staging_cls(self.storage)
-
-    def init(self, force=False):
-        self.storage.create(force=force)
-
+    @abstractmethod
     def destroy(self):
-        self.storage.destroy()
+        pass
 
+    @abstractmethod
     def add(self, relative_file_path):
-        self.stage.add(relative_file_path)
+        pass
 
+    @abstractmethod
     def commit(self):
-        raise NotImplementedError("commit")
+        pass
 
+    @abstractmethod
     def checkout(self):
-        raise NotImplementedError("checkout")
+        pass

@@ -1,10 +1,14 @@
 #! /usr/bin/env python
 """
 """
-from nit.core.tests.util import NitTestCase
-from nit.core.storage import NitStorage, NitBlob
+from tempfile import TemporaryDirectory
 
-class TestBlobStorage(NitTestCase):
+from nit.core.tests.util import NitTestCase
+from nit.components.nit.storage import NitStorage
+from nit.components.nit.blob import NitBlob
+
+
+class TestNitStorage(NitTestCase):
 
     """
     """
@@ -13,14 +17,18 @@ class TestBlobStorage(NitTestCase):
         """
         """
 
-        test_str = "This is only a test\n"
+        with TemporaryDirectory() as project_dir_path:
+            self.assertDirExists(project_dir_path)
 
-        project_dir_path = "/Users/brjorgensen/nit_test_proj"
-        storage = NitStorage(project_dir_path)
-        storage.create(force=True)
+            test_str = "This is only a test\n"
 
-        test_blob = NitBlob(test_str.encode())
-        storage.put(test_blob)
+            storage = NitStorage(project_dir_path)
+            storage.create()
 
-        actual_blob = storage.get(test_blob.key)
-        assert actual_blob.content.decode() == test_str
+            test_blob = NitBlob(test_str.encode())
+            storage.put(test_blob)
+
+            actual_blob = storage.get(test_blob.key)
+            assert actual_blob.content.decode() == test_str
+
+        self.assertNotDirExists(project_dir_path)

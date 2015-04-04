@@ -1,35 +1,39 @@
 #! /usr/bin/env python
 """
 """
-import os
-from nit.core.objects import BaseBlob
-from nit.core.repository import Repository
+from tempfile import TemporaryDirectory
+
+from nit.components.nit.repository import NitRepository
 from nit.core.tests.util import NitTestCase
 
 
-class TestRepository(NitTestCase):
+class TestNitRepository(NitTestCase):
     """
     """
     def setUp(self):
-        self.project_dir_path = "/Users/brjorgensen/nit_test_proj"
-        self.repo = Repository(self.project_dir_path)
+        self.temp_dir = TemporaryDirectory()
+        self.project_dir_path = self.temp_dir.name
+        self.repo = NitRepository(self.project_dir_path)
         self.repo.destroy()
 
-    def test_init_should_create_a_repo(self):
+    def tearDown(self):
+        self.temp_dir.cleanup()
+
+    def test_create_should_create_a_repo(self):
         """
         """
-        self.repo.init()
+        self.repo.create()
         self.assertDirExists(self.repo.storage.repo_dir_path)
 
-    def test_init_should_fail_if_repo_exists(self):
+    def test_create_should_fail_if_repo_exists(self):
         """
         """
-        self.repo.init()
+        self.repo.create()
         with self.expectUserError():
-            self.repo.init()
+            self.repo.create()
 
-    def test_init_should_not_fail_if_repo_exists_and_force_is_true(self):
+    def test_create_should_not_fail_if_repo_exists_and_force_is_true(self):
         """
         """
-        self.repo.init()
-        self.repo.init(force=True)
+        self.repo.create()
+        self.repo.create(force=True)
