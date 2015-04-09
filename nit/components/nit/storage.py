@@ -4,9 +4,13 @@
 import os
 import shutil
 
+from nit.core.log import getLogger
 from nit.core.storage import Storage
 from nit.core.errors import NitUserError
 from nit.components.nit.serialization import NitSerializer
+
+
+logger = getLogger(__name__)
 
 
 class NitStorage(Storage):
@@ -77,6 +81,11 @@ class NitStorage(Storage):
         """
         self._create_verify_repo_dir(force)
         self._create_dir_structure()
+        logger.info(("Initialized empty {repository_name} "
+                     "repository in {repository_path}").format(
+            repository_name=self.__class__.__name__.replace("Storage", ""),
+            repository_path=self.repo_dir_path
+        ))
 
     def _create_dir_structure(self):
         os.makedirs(self.repo_dir_path)

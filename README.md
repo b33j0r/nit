@@ -15,7 +15,7 @@ As with Git, these operations are implemented in terms of lower-level operations
 
 ## Components
 
-A `Repository` object doesn't actually do a whole lot. It defines operations at a high level and then relies on parameterizable component objects for specific behavior.
+A `RepositoryProxy` object doesn't actually do a whole lot. It defines operations at a high level and then relies on parameterizable component objects for specific behavior.
 
  * `SerializationStrategy`: converts objects into bytes
  * `BaseStorageStrategy`: saves and retrieves objects to and from the repository

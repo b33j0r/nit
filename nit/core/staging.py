@@ -4,7 +4,7 @@
 from abc import ABCMeta, abstractmethod
 
 
-class Stage(metaclass=ABCMeta):
+class StageObservable(metaclass=ABCMeta):
 
     """
     An observable interface that notifies observers when the
@@ -16,7 +16,7 @@ class Stage(metaclass=ABCMeta):
         pass
 
 
-class StageObserver(metaclass=ABCMeta):
+class StageObserver(object):
 
     """
     An observer interface that listens to notifications about

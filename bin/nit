@@ -1,0 +1,41 @@
+#! /usr/bin/env python3
+
+"""
+Usage:
+    nit init [--force]
+    nit add [files ...]
+"""
+
+import sys
+from pathlib import Path
+
+this_file_path = Path(__file__)
+this_dir_path = this_file_path.parent
+project_path = this_dir_path.parent
+
+# Interesting note if you're new to pathlib or python3,
+# you must convert the path object to a string, as sys.path
+# is still a list of strings in Python 3.4
+
+sys.path.remove(str(this_dir_path))
+sys.path.append(str(project_path))
+
+try:
+    import nit
+except ImportError:
+    print("Failed to import the nit package\n")
+    print("sys.path:\n{}\n".format(
+        "\n".join("    " + str(p) for p in sys.path)
+    ))
+    raise
+
+try:
+    from nit.cli import cli
+except ImportError:
+    print("Failed to import cli from nit.cli\n")
+    print("sys.path:\n{}\n".format(
+        "\n".join("    " + str(p) for p in sys.path)
+    ))
+    raise
+
+cli.main(*sys.argv[1:] or ["--help"])
