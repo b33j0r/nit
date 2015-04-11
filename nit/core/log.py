@@ -7,7 +7,7 @@ http://leigh.cudd.li/article/Cross_Platform_Colorized_Logger_Output_Using_Python
 
 from logging import StreamHandler, DEBUG, getLogger as realGetLogger, Formatter
 
-from colorama import Fore, Back, init, Style
+from colorama import Fore, Back, Style, Cursor
 
 
 class ColorizedStreamHandler(StreamHandler):
@@ -175,7 +175,7 @@ def getLogger(name=None, fmt='{message}'):
     :rtype: Logger
     """
     log = realGetLogger(name)
-    # Only enable colour if support was loaded properly
+
     formatter = ColorizedFormatter(fmt, style="{")
 
     handler = ColorizedStreamHandler(tty_formatter=formatter)
@@ -184,5 +184,11 @@ def getLogger(name=None, fmt='{message}'):
 
     log.addHandler(handler)
     log.setLevel(DEBUG)
-    log.propagate = 0 # Don't bubble up to the root logger
+    log.propagate = 0  # Don't bubble up to the root logger
+
+    log.Fore = Fore
+    log.Back = Back
+    log.Style = Style
+    log.Cursor = Cursor
+
     return log

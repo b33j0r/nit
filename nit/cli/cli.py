@@ -56,8 +56,17 @@ class RepositoryProxy:
     def status(self, args):
         print("STATUS was called with {}".format(args))
 
-    def add(self, args):
-        print("ADD was called with {}".format(args))
+    @map_args(arg_mappings=["files"])
+    def add(self, files):
+        self.repo.add(*files)
+
+    @map_args(arg_mappings=["key"])
+    def cat(self, key):
+        s = self.repo.cat(key)
+        # the logger already adds a newline
+        if s.endswith("\n"):
+            s = s[:-1]
+        logger.info(s)
 
     def commit(self, args):
         print("COMMIT was called with {}".format(args))
@@ -73,15 +82,6 @@ class ParserFactory(metaclass=ABCMeta):
 
     def build_parser(self, repository, **kwargs):
         pass
-
-
-class NitLoggerTest(Exception):
-    def __init__(self):
-        super().__init__("Testing, testing, 1, 2, 3!")
-
-
-def parser_test(*args, **kwargs):
-    raise NitLoggerTest()
 
 
 class BaseParserFactory(ParserFactory):
@@ -134,8 +134,8 @@ class BaseParserFactory(ParserFactory):
         )
 
         # Sub-parser for 'status' command
-        parser_add = subparsers.add_parser("status")
-        parser_add.set_defaults(
+        parser_status = subparsers.add_parser("status")
+        parser_status.set_defaults(
             func=repository.status
         )
 
@@ -144,26 +144,44 @@ class BaseParserFactory(ParserFactory):
         parser_add.set_defaults(
             func=repository.add
         )
+        parser_add.add_argument("files", nargs="+")
+
+        # Sub-parser for 'cat' command
+        parser_cat = subparsers.add_parser("cat")
+        parser_cat.set_defaults(
+            func=repository.cat
+        )
+        parser_cat.add_argument("key")
 
         # Sub-parser for 'commit' command
-        parser_add = subparsers.add_parser("commit")
-        parser_add.set_defaults(
+        parser_commit = subparsers.add_parser("commit")
+        parser_commit.set_defaults(
             func=repository.commit
         )
 
         # Sub-parser for 'checkout' command
-        parser_add = subparsers.add_parser("checkout")
-        parser_add.set_defaults(
+        parser_checkout = subparsers.add_parser("checkout")
+        parser_checkout.set_defaults(
             func=repository.checkout
         )
 
         return parser
 
 
+class NitLoggerTestException(Exception):
+    def __init__(self):
+        super().__init__("Testing, testing, 1, 2, 3!")
+
+
+def parser_test(*args, **kwargs):
+    raise NitLoggerTestException()
+
+
 def main(*args):
     import os
     import colorama
     colorama.init()
+
     from nit.components.nit.repository import NitRepository
 
     args = args or sys.argv
@@ -183,7 +201,7 @@ def main(*args):
     except NitInternalError as exc:
         logger.critical(str(exc))
 
-    except NitLoggerTest as exc:
+    except NitLoggerTestException as exc:
         logger.critical(str(exc))
         logger.error(str(exc))
         logger.warn(str(exc))
@@ -191,7 +209,9 @@ def main(*args):
         logger.info(str(exc))
 
     except Exception as exc:
+        import traceback
         logger.critical("[Unhandled Error] " + str(exc))
+        logger.debug("\n" + traceback.format_exc())
 
     finally:
         colorama.deinit()

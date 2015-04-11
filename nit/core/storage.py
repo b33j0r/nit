@@ -17,13 +17,6 @@ class Storable(Serializable, metaclass=ABCMeta):
     Something that can be stored, such as a file or a commit.
     """
 
-    @abstractproperty
-    def key(self):
-        """
-        The identifier used to retrieve the same object using `get`.
-        """
-        pass
-
     @abstractmethod
     def accept_put(self, storage):
         """

@@ -21,11 +21,6 @@ class NitBlob(Storable):
     def __len__(self):
         return len(self.content)
 
-    @property
-    def key(self):
-        sha1 = hashlib.sha1(self.content).hexdigest()
-        return sha1
-
     def accept_put(self, storage):
         storage.put_blob(self)
 

@@ -52,22 +52,6 @@ class Serializer(metaclass=ABCMeta):
         pass
 
 
-class SerializerFactory(metaclass=ABCMeta):
-
-    """
-    Creates a serializer appropriate for a given `Serializable`,
-    or a deserializer appropriate for a given byte stream.
-    """
-
-    @abstractmethod
-    def get_serializer(self, serializable):
-        pass
-
-    @abstractmethod
-    def get_deserializer(self, stream):
-        pass
-
-
 class BaseSerializer(Serializer):
 
     """

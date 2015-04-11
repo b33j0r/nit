@@ -1,6 +1,9 @@
 #! /usr/bin/env python
 """
 """
+import glob
+import hashlib
+import io
 import os
 import shutil
 
@@ -70,7 +73,34 @@ class NitStorage(Storage):
     def object_dir_path(self):
         return os.path.join(self.repo_dir_path, self.object_dir_name)
 
-    def get_object_path(self, key):
+    def get_object_path(self, keyish, must_exist=False):
+        if not must_exist:
+            return self.object_dir_path, keyish
+
+        if len(keyish) == 40:
+            blob_file_path = os.path.join(self.object_dir_path, keyish)
+
+            if not os.path.exists(blob_file_path):
+                raise NitUserError("No object matching '{}'".format(keyish))
+
+            key = keyish
+
+        else:
+            blob_file_path = os.path.join(self.object_dir_path, keyish + "*")
+
+            logger.debug("Searching for an object matching '{}'".format(blob_file_path))
+
+            search_result = glob.glob(blob_file_path)
+
+            if len(search_result) == 0:
+                raise NitUserError("No object matching '{}'".format(keyish))
+
+            if len(search_result) > 1:
+                logger.debug("search_result = {}".format(search_result))
+                raise NitUserError("Multiple objects matching '{}'".format(keyish))
+
+            key = os.path.basename(search_result[0])
+
         return self.object_dir_path, key
 
     def create(self, force=False):
@@ -110,7 +140,7 @@ class NitStorage(Storage):
         return self.get_blob(key)
 
     def __contains__(self, key):
-        blob_dir_path, blob_file_name = self.get_object_path(key)
+        blob_dir_path, blob_file_name = self.get_object_path(key, must_exist=True)
         blob_file_path = os.path.join(blob_dir_path, blob_file_name)
 
         if not os.path.exists(blob_file_path):
@@ -118,21 +148,41 @@ class NitStorage(Storage):
         return True
 
     def put_blob(self, blob):
-        obj_dir_path, obj_file_path = self.get_object_path(blob.key)
+        with io.BytesIO() as memory_file:
+            s = self._serialization_cls(memory_file)
+            s.serialize(blob)
+
+            memory_file.seek(0)
+            content = memory_file.read()
+
+        key = hashlib.sha1(content).hexdigest()
+
+        obj_dir_path, obj_file_path = self.get_object_path(key, must_exist=False)
         blob_file_path = os.path.join(obj_dir_path, obj_file_path)
 
         os.makedirs(obj_dir_path, exist_ok=True)
 
-        with open(blob_file_path, 'wb') as f:
-            s = self._serialization_cls(f)
-            s.serialize(blob)
+        if os.path.exists(blob_file_path):
+            logger.info(
+                logger.Fore.LIGHTBLACK_EX +
+                "EXISTS" +
+                logger.Fore.RESET +
+                " {}".format(key)
+            )
+        else:
+            with open(blob_file_path, 'wb') as f:
+                f.write(content)
 
-    def get_blob(self, key):
-        blob_dir_path, blob_file_name = self.get_object_path(key)
+            logger.info(
+                logger.Fore.LIGHTGREEN_EX +
+                "ADDED" +
+                logger.Fore.RESET +
+                "  {}".format(key)
+            )
+
+    def get_blob(self, keyish):
+        blob_dir_path, blob_file_name = self.get_object_path(keyish, must_exist=True)
         blob_file_path = os.path.join(blob_dir_path, blob_file_name)
-
-        if not os.path.exists(blob_file_path):
-            raise NitUserError("Object '{}' is unknown".format(key))
 
         with open(blob_file_path, 'rb') as f:
             s = self._serialization_cls(f)
