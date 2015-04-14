@@ -68,8 +68,9 @@ class RepositoryProxy:
             s = s[:-1]
         logger.info(s)
 
-    def commit(self, args):
-        print("COMMIT was called with {}".format(args))
+    @map_args(arg_mappings=[])
+    def commit(self, **kwargs):
+        self.repo.commit(**kwargs)
 
     def checkout(self, args):
         print("CHECKOUT was called with {}".format(args))
@@ -193,7 +194,10 @@ def main(*args):
 
     try:
         args.func(parsed_args=args)
-        return 0
+
+        status_code = 0
+        logger.debug("EXIT with status {}\n".format(status_code))
+        return status_code
 
     except NitUserError as exc:
         logger.error(str(exc))
@@ -216,4 +220,6 @@ def main(*args):
     finally:
         colorama.deinit()
 
-    return 1
+    status_code = 1
+    logger.debug("EXIT with status {}\n".format(status_code))
+    return status_code

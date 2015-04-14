@@ -48,7 +48,7 @@ class ColorizedFormatter(Formatter):
     """
 
     def __init__(self, fmt=None, datefmt=None, style='{'):
-        self.prefix_separator = "   "
+        self.prefix_separator = " "
 
         super().__init__(fmt, datefmt, style)
 

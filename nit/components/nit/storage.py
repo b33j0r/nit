@@ -96,7 +96,9 @@ class NitStorage(Storage):
                 raise NitUserError("No object matching '{}'".format(keyish))
 
             if len(search_result) > 1:
-                logger.debug("search_result = {}".format(search_result))
+                logger.debug("Multiple objects found:\n{}".format("\n".join(
+                    "    " + s for s in search_result
+                )))
                 raise NitUserError("Multiple objects matching '{}'".format(keyish))
 
             key = os.path.basename(search_result[0])
@@ -131,6 +133,11 @@ class NitStorage(Storage):
                 )
 
     def destroy(self, ignore_errors=True):
+        logger.debug(("Destroying {repository_name} "
+                      "repository in {repository_path}").format(
+            repository_name=self.__class__.__name__.replace("Storage", ""),
+            repository_path=self.repo_dir_path
+        ))
         shutil.rmtree(self.repo_dir_path, ignore_errors=ignore_errors)
 
     def put(self, obj):
@@ -163,21 +170,21 @@ class NitStorage(Storage):
         os.makedirs(obj_dir_path, exist_ok=True)
 
         if os.path.exists(blob_file_path):
-            logger.info(
+            logger.debug(
                 logger.Fore.LIGHTBLACK_EX +
                 "EXISTS" +
                 logger.Fore.RESET +
-                " {}".format(key)
+                "  {}".format(key)
             )
         else:
             with open(blob_file_path, 'wb') as f:
                 f.write(content)
 
-            logger.info(
+            logger.debug(
                 logger.Fore.LIGHTGREEN_EX +
                 "ADDED" +
                 logger.Fore.RESET +
-                "  {}".format(key)
+                "   {}".format(key)
             )
 
     def get_blob(self, keyish):
@@ -187,3 +194,6 @@ class NitStorage(Storage):
         with open(blob_file_path, 'rb') as f:
             s = self._serialization_cls(f)
             return s.deserialize()
+
+    def put_tree(self, tree):
+        self.put_blob(tree)

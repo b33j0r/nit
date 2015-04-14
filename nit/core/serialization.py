@@ -65,6 +65,8 @@ class BaseSerializer(Serializer):
 
         if obj_type == "blob":
             return self.deserialize_blob()
+        elif obj_type == "tree":
+            return self.deserialize_tree()
         else:
             raise NotImplementedError(
                 "Unknown object type '{}'".format(obj_type)
@@ -75,6 +77,18 @@ class BaseSerializer(Serializer):
 
     def deserialize_blob(self):
         raise NotImplementedError("deserialize_blob")
+
+    def serialize_tree(self, tree):
+        raise NotImplementedError("serialize_tree")
+
+    def deserialize_tree(self):
+        raise NotImplementedError("deserialize_tree")
+
+    def serialize_index(self, index):
+        raise NotImplementedError("serialize_index")
+
+    def deserialize_index(self):
+        raise NotImplementedError("deserialize_index")
 
     def serialize_signature(self, obj_type, obj_len):
         self.write_string(
