@@ -32,14 +32,23 @@ class NitRepository(Repository):
         self.storage.destroy()
 
     def add(self, *relative_file_paths):
+        blobs = []
         for relative_file_path in relative_file_paths:
-            abs_file_path = os.path.join(self.storage.project_dir_path, relative_file_path)
+            abs_file_path = os.path.join(
+                self.storage.project_dir_path, relative_file_path
+            )
             if not os.path.exists(abs_file_path):
-                raise NitUserError("The file '{}' does not exist".format(abs_file_path))
+                raise NitUserError(
+                    "The file '{}' does not exist".format(
+                        abs_file_path
+                    )
+                )
             with open(abs_file_path, 'rb') as file:
                 contents = file.read()
                 blob = Blob(contents)
-                self.storage.put(blob)
+                key = self.storage.put(blob)
+                blobs.append((key, relative_file_path, blob))
+        return blobs
 
     def cat(self, key):
         obj = self.storage.get(key)
@@ -47,8 +56,8 @@ class NitRepository(Repository):
 
     def commit(self):
         obj = Tree()
-        obj.add_node(Tree.Node("jokes.txt", "ae"))
-        obj.add_node(Tree.Node("jokes2.txt", "52"))
+        for key, relative_file_path, blob in self.add("a", "b"):
+            obj.add_node(Tree.Node(relative_file_path, key))
         self.storage.put(obj)
 
     def checkout(self):

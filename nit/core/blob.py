@@ -16,10 +16,10 @@ class Blob(Storable):
         return self.content.decode()
 
     def accept_put(self, storage):
-        storage.put_blob(self)
+        return storage.put_blob(self)
 
     def accept_serializer(self, serializer):
-        serializer.serialize_blob(self)
+        return serializer.serialize_blob(self)
 
     @classmethod
     def accept_deserializer(cls, deserializer):

@@ -36,16 +36,6 @@ class Storable(Serializable, metaclass=ABCMeta):
         """
         pass
 
-    @abstractmethod
-    def accept_serializer(self, serializer):
-        """
-        Accept method for a visitor serializing an object.
-
-        Should call the appropriate method on `serializer` with
-        `self` as the only argument.
-        """
-        pass
-
 
 class Storage(metaclass=ABCMeta):
 
@@ -199,7 +189,7 @@ class BaseStorage(Storage):
         :param obj:
         :return:
         """
-        obj.accept_put(self)
+        return obj.accept_put(self)
 
     def get(self, key):
         """
@@ -210,15 +200,16 @@ class BaseStorage(Storage):
         return self.get_object(key)
 
     def put_blob(self, blob):
-        self.put_object(blob)
+        return self.put_object(blob)
 
     def put_tree(self, tree):
-        self.put_object(tree)
+        return self.put_object(tree)
 
     def put_object(self, obj):
         content = self._serialize_object_to_bytes(obj)
         key = self.get_object_key_for_content(content)
         self._write_object(key, content)
+        return key
 
     def get_object(self, keyish):
         dir_path, file_name = self.get_object_path(keyish, must_exist=True)
