@@ -21,7 +21,10 @@ class NitRepository(Repository):
         staging_cls=None,
         serialization_cls=NitSerializer
     ):
-        self.storage = storage_cls(project_dir_path, serialization_cls)
+        self.storage = storage_cls(
+            project_dir_path,
+            serialization_cls=serialization_cls
+        )
         # self.stage = staging_cls(self.storage)
 
     def create(self, force=False):
@@ -40,15 +43,13 @@ class NitRepository(Repository):
                 blob = NitBlob(contents)
                 self.storage.put(blob)
 
-
-
     def cat(self, key):
         obj = self.storage.get(key)
         return str(obj)
 
     def commit(self):
         obj = Tree()
-        obj.add_node(TreeNode("jokes.txt", "5"))
+        obj.add_node(TreeNode("jokes.txt", "ae"))
         obj.add_node(TreeNode("jokes2.txt", "52"))
         self.storage.put(obj)
 

@@ -33,16 +33,19 @@ class NitSerializer(BaseSerializer):
         logger.debug("Serializing Tree")
 
         with BytesIO() as memory_file:
-            memory_serializer = BaseSerializer(memory_file)
+            memory_serializer = self.__class__(memory_file)
 
             for node in tree.nodes:
                 memory_serializer.write_string(node.key + "\0", encoding='ascii')
                 memory_serializer.write_string(node.relative_file_path + "\0", encoding='ascii')
-                logger.debug(("Serialized TreeNode:\n"
-                              "    Key:  {}\n"
-                              "    Path: {}").format(
-                    node.key, node.relative_file_path
-                ))
+
+                logger.debug(
+                    ("Serialized TreeNode:\n"
+                     "    Key:  {}\n"
+                     "    Path: {}").format(
+                        node.key, node.relative_file_path
+                    )
+                )
 
             memory_file.seek(0)
             content = memory_file.read()
@@ -59,10 +62,17 @@ class NitSerializer(BaseSerializer):
             key = self.read_bytes_until().decode(encoding='ascii')
             if not key:
                 break
+
             path = self.read_bytes_until().decode(encoding='ascii')
-            logger.debug("Deserialized TreeNode:\n    Key:  {}\n    Path: {}".format(
-                key, path
-            ))
+
+            logger.debug(
+                ("Deserialized TreeNode:\n"
+                 "    Key:  {}\n"
+                 "    Path: {}").format(
+                    key, path
+                )
+            )
+
             tree.add_node(TreeNode(relative_file_path=path, key=key))
 
         return tree

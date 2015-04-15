@@ -186,6 +186,7 @@ def main(*args):
     from nit.components.nit.repository import NitRepository
 
     args = args or sys.argv
+
     nit_repo = NitRepository(os.getcwd())
     repo = RepositoryProxy(nit_repo)
     parser_factory = BaseParserFactory()
