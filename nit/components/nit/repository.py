@@ -3,7 +3,7 @@
 """
 import os
 
-from nit.components.nit.blob import NitBlob
+from nit.core.blob import Blob
 from nit.components.nit.storage import NitStorage
 from nit.components.nit.serialization import NitSerializer
 from nit.core.errors import NitUserError
@@ -18,14 +18,12 @@ class NitRepository(Repository):
         self,
         project_dir_path,
         storage_cls=NitStorage,
-        staging_cls=None,
         serialization_cls=NitSerializer
     ):
         self.storage = storage_cls(
             project_dir_path,
             serialization_cls=serialization_cls
         )
-        # self.stage = staging_cls(self.storage)
 
     def create(self, force=False):
         self.storage.create(force=force)
@@ -40,7 +38,7 @@ class NitRepository(Repository):
                 raise NitUserError("The file '{}' does not exist".format(abs_file_path))
             with open(abs_file_path, 'rb') as file:
                 contents = file.read()
-                blob = NitBlob(contents)
+                blob = Blob(contents)
                 self.storage.put(blob)
 
     def cat(self, key):

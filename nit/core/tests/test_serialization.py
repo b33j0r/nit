@@ -6,7 +6,7 @@ from unittest import TestCase
 
 from nit.core.serialization import BaseSerializer
 from nit.components.nit.serialization import NitSerializer
-from nit.components.nit.blob import NitBlob
+from nit.core.blob import Blob
 from nit.core.tests.util import NitTestCase
 
 
@@ -52,7 +52,7 @@ class TestNitSerializer(TestBaseSerializer):
     SERIALIZER_CLS = NitSerializer
 
     def test_serialize_then_deserialize_blob(self):
-        blob = NitBlob(self.HELLO)
+        blob = Blob(self.HELLO)
         self.serializer.serialize(blob)
 
         self.stream.seek(0)

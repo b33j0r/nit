@@ -38,7 +38,7 @@ class ColorizedStreamHandler(StreamHandler):
 
         try:
             return getattr(self.stream, 'isatty', None)()
-        except:
+        except AttributeError:
             return False
 
 

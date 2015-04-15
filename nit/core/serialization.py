@@ -24,16 +24,6 @@ class Serializable(metaclass=ABCMeta):
         """
         pass
 
-    @abstractclassmethod
-    def accept_deserializer(cls, deserializer):
-        """
-        Accept method for a deserializer visitor deserializing an object.
-
-        Should call the appropriate method on `deserializer` with
-        no arguments and return the result.
-        """
-        pass
-
 
 class Serializer(metaclass=ABCMeta):
 

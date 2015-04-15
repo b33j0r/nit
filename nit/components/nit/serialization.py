@@ -6,7 +6,7 @@ from io import BytesIO
 from nit.core.log import getLogger
 from nit.core.serialization import BaseSerializer
 from nit.core.tree import Tree, TreeNode
-from nit.components.nit.blob import NitBlob
+from nit.core.blob import Blob
 
 
 logger = getLogger(__name__)
@@ -27,7 +27,7 @@ class NitSerializer(BaseSerializer):
     def deserialize_blob(self):
         logger.debug("Deserializing Blob")
 
-        return NitBlob(self.read_bytes())
+        return Blob(self.read_bytes())
 
     def serialize_tree(self, tree):
         logger.debug("Serializing Tree")
@@ -36,8 +36,12 @@ class NitSerializer(BaseSerializer):
             memory_serializer = self.__class__(memory_file)
 
             for node in tree.nodes:
-                memory_serializer.write_string(node.key + "\0", encoding='ascii')
-                memory_serializer.write_string(node.relative_file_path + "\0", encoding='ascii')
+                memory_serializer.write_string(
+                    node.key + "\0", encoding='ascii'
+                )
+                memory_serializer.write_string(
+                    node.relative_file_path + "\0", encoding='ascii'
+                )
 
                 logger.debug(
                     ("Serialized TreeNode:\n"

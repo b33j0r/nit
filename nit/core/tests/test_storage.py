@@ -5,7 +5,7 @@ from tempfile import TemporaryDirectory
 
 from nit.core.tests.util import NitTestCase
 from nit.components.nit.storage import NitStorage
-from nit.components.nit.blob import NitBlob
+from nit.core.blob import Blob
 
 
 class TestNitStorage(NitTestCase):
@@ -25,7 +25,7 @@ class TestNitStorage(NitTestCase):
             storage = NitStorage(project_dir_path)
             storage.create()
 
-            test_blob = NitBlob(test_str.encode())
+            test_blob = Blob(test_str.encode())
             storage.put(test_blob)
 
             actual_blob = storage.get(test_blob.key)
