@@ -21,6 +21,10 @@ class Blob(Storable):
     def accept_serializer(self, serializer):
         serializer.serialize_blob(self)
 
+    @classmethod
+    def accept_deserializer(cls, deserializer):
+        return deserializer.deserialize_blob(cls)
+
     @property
     def content(self):
         return self._content_bytes

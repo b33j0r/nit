@@ -77,9 +77,13 @@ class ColorizedFormatter(Formatter):
 
         prefix_padded = " "*prefix_padding + prefix + " "*prefix_padding
 
-        return self.colorizeString(prefix_padded, fore=fore, back=back, style=style)
+        return self.colorizeString(
+            prefix_padded, fore=fore, back=back, style=style
+        )
 
-    def formatMessageSummary(self, record, fore=None, back=None, style=Style.RESET_ALL):
+    def formatMessageSummary(
+            self, record, fore=None, back=None, style=Style.RESET_ALL
+    ):
         return self.colorizeString(
             super().formatMessage(record),
             fore=fore,
@@ -164,8 +168,9 @@ class ColorizedFormatter(Formatter):
 
 
 def getLogger(name=None, fmt='{message}'):
-    """ Get and initialize a colourised logging instance if the system supports
-    it as defined by the log.has_colour
+    """
+    Get and initialize a colourised logging instance if
+    the system supports it
 
     :param name: Name of the logger
     :type name (str): str

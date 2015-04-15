@@ -24,6 +24,16 @@ class Serializable(metaclass=ABCMeta):
         """
         pass
 
+    @abstractclassmethod
+    def accept_deserializer(cls, deserializer):
+        """
+        Accept method for a deserializer visitor deserializing an object.
+
+        Should call the appropriate method on `deserializer` with
+        `cls` as the only argument and return the result.
+        """
+        pass
+
 
 class Serializer(metaclass=ABCMeta):
 
@@ -51,51 +61,29 @@ class BaseSerializer(Serializer):
         serializable.accept_serializer(self)
 
     def deserialize(self):
-        obj_len, obj_type = self.deserialize_signature()
+        obj_cls = self._deserialize_get_obj_cls()
+        return obj_cls.accept_deserializer(self)
 
-        if obj_type == "blob":
-            return self.deserialize_blob()
-        elif obj_type == "tree":
-            return self.deserialize_tree()
-        else:
-            raise NotImplementedError(
-                "Unknown object type '{}'".format(obj_type)
-            )
+    def _deserialize_get_obj_cls(self):
+        raise NotImplementedError("_deserialize_get_obj_cls")
 
     def serialize_blob(self, blob):
         raise NotImplementedError("serialize_blob")
 
-    def deserialize_blob(self):
+    def deserialize_blob(self, blob_cls):
         raise NotImplementedError("deserialize_blob")
 
     def serialize_tree(self, tree):
         raise NotImplementedError("serialize_tree")
 
-    def deserialize_tree(self):
+    def deserialize_tree(self, tree_cls):
         raise NotImplementedError("deserialize_tree")
 
     def serialize_index(self, index):
         raise NotImplementedError("serialize_index")
 
-    def deserialize_index(self):
+    def deserialize_index(self, index_cls):
         raise NotImplementedError("deserialize_index")
-
-    def serialize_signature(self, obj_type, obj_len):
-        self.write_string(
-            "{obj_type} {obj_len}\0".format(
-                obj_type=obj_type,
-                obj_len=obj_len
-            ),
-            encoding="ascii"
-        )
-
-    def deserialize_signature(self):
-        signature = self.read_bytes_until().decode(
-            encoding="ascii"
-        )
-        obj_type, obj_len = signature.split(" ")
-        obj_len = int(obj_len)
-        return obj_len, obj_type
 
     def write_bytes(self, b):
         self.stream.write(b)

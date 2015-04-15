@@ -8,7 +8,7 @@ from nit.components.nit.storage import NitStorage
 from nit.components.nit.serialization import NitSerializer
 from nit.core.errors import NitUserError
 from nit.core.repository import Repository
-from nit.core.tree import Tree, TreeNode
+from nit.core.tree import Tree
 
 
 class NitRepository(Repository):
@@ -47,8 +47,8 @@ class NitRepository(Repository):
 
     def commit(self):
         obj = Tree()
-        obj.add_node(TreeNode("jokes.txt", "ae"))
-        obj.add_node(TreeNode("jokes2.txt", "52"))
+        obj.add_node(Tree.Node("jokes.txt", "ae"))
+        obj.add_node(Tree.Node("jokes2.txt", "52"))
         self.storage.put(obj)
 
     def checkout(self):

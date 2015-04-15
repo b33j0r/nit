@@ -4,29 +4,28 @@
 from nit.core.storage import Storable
 
 
-class TreeNode:
-
-    """
-    """
-
-    def __init__(self, relative_file_path, key):
-        self.relative_file_path = relative_file_path
-        self.key = key
-
-    def __hash__(self):
-        return hash(str(self.key) + "-" + str(self.relative_file_path))
-
-    def __eq__(self, other):
-        return hash(self) == hash(other)
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-
 class Tree(Storable):
 
     """
     """
+
+    class Node:
+
+        """
+        """
+
+        def __init__(self, relative_file_path, key):
+            self.relative_file_path = relative_file_path
+            self.key = key
+
+        def __hash__(self):
+            return hash(str(self.key) + "-" + str(self.relative_file_path))
+
+        def __eq__(self, other):
+            return hash(self) == hash(other)
+
+        def __ne__(self, other):
+            return not self.__eq__(other)
 
     def __init__(self):
         self._nodes = set()
@@ -43,6 +42,10 @@ class Tree(Storable):
 
     def accept_serializer(self, serializer):
         serializer.serialize_tree(self)
+
+    @classmethod
+    def accept_deserializer(cls, deserializer):
+        return deserializer.deserialize_tree(cls)
 
     @property
     def nodes(self):
