@@ -195,7 +195,8 @@ def getLogger(name=None, fmt='{message}'):
     handler.setFormatter(formatter)
 
     log.addHandler(handler)
-    log.setLevel(DEBUG)
+    #log.setLevel(DEBUG)
+    log.setLevel(INFO)
     log.propagate = 0  # Don't bubble up to the root logger
 
     log.Fore = Fore

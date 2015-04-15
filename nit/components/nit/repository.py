@@ -3,12 +3,16 @@
 """
 import os
 
+from nit.core.log import getLogger
 from nit.core.blob import Blob
 from nit.components.nit.storage import NitStorage
 from nit.components.nit.serialization import NitSerializer
 from nit.core.errors import NitUserError
 from nit.core.repository import Repository
 from nit.core.tree import Tree
+
+
+logger = getLogger(__name__)
 
 
 class NitRepository(Repository):
@@ -75,14 +79,21 @@ class NitRepository(Repository):
             obj2.add_node(Tree.Node(relative_file_path, key))
         self.storage.put(obj2)
 
-        obj.diff(obj2)
-
         obj3 = Tree()
         for key, relative_file_path, blob in self.add("c"):
             obj3.add_node(Tree.Node(relative_file_path, key))
         self.storage.put(obj3)
 
-        obj.diff(obj3)
+    def diff(self):
+        obj = self.storage.get_object("064c1aac7752cd50c187752a50e5111e91b80a54")
+
+        obj2 = self.storage.get_object("f51eeed6772a0643a255333e6fb2e624dd667052")
+        diff = obj.diff(obj2)
+        logger.info("{}".format(diff))
+
+        obj3 = self.storage.get_object("2be8eba8ab1379641d81c4f32945d99a041450b5")
+        diff = obj.diff(obj3)
+        logger.info("{}".format(diff))
 
     def checkout(self):
         raise NotImplementedError("checkout")

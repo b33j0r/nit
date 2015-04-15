@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 """
 """
+from nit.core.diff import TreeDiff
 from nit.core.log import getLogger
 from nit.core.storage import Storable
 
@@ -19,6 +20,7 @@ class Tree(Storable):
         def __init__(self, relative_file_path, key):
             self.path = relative_file_path
             self.key = key
+            self.key_short = key[:6]
 
         def __str__(self):
             return str(self.path) + " " + str(self.key)
@@ -102,70 +104,4 @@ class Tree(Storable):
         del self._path_to_key[tree_node.path]
 
     def diff(self, other):
-        a_key_to_node = self.key_to_node
-        b_key_to_node = other.key_to_node
-
-        a_file_to_node = self.file_to_node
-        b_file_to_node = other.file_to_node
-
-        changes = other.node_set ^ self.node_set
-
-        added_files = other.file_set - self.file_set
-        removed_files = self.file_set - other.file_set
-
-        modified_files = set([
-            a_key_to_node.get(n.key, b_key_to_node.get(n.key)).path
-            for n in changes
-            if (
-                n.path not in added_files and
-                n.path not in removed_files
-            )
-        ])
-
-        modified_nodes = sorted(set([
-            other.file_to_node[path] for path in modified_files
-        ]))
-
-        added_nodes = sorted([
-            b_file_to_node[f] for f in added_files
-        ])
-
-        removed_nodes = sorted([
-            a_file_to_node[f] for f in removed_files
-        ])
-
-        logger.debug(
-            "DIFF\n{}{}{}".format(
-                ("\n" +
-                 logger.Fore.GREEN +
-                 "Added:\n" +
-                 logger.Fore.RESET +
-                 "\n".join(
-                     "    {n.key} '{n.path}'".format(n=n)
-                     for n in added_nodes
-                 ) + "\n")
-                if added_nodes else "",
-
-                ("\n" +
-                 logger.Fore.YELLOW +
-                 "Modified:\n" +
-                 logger.Fore.RESET +
-                 "\n".join(
-                     "    {n.key} '{n.path}'".format(n=n)
-                     for n in modified_nodes
-                 ) + "\n")
-                if modified_nodes else "",
-
-                ("\n" +
-                 logger.Fore.RED +
-                 "Removed:\n" +
-                 logger.Fore.RESET +
-                 "\n".join(
-                     "    {n.key} '{n.path}'".format(n=n)
-                     for n in removed_nodes
-                 ) + "\n")
-                if removed_nodes else ""
-            )
-        )
-
-        return added_nodes, modified_nodes, removed_nodes
+        return TreeDiff(self, other)

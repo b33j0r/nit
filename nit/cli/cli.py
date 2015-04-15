@@ -60,6 +60,10 @@ class RepositoryProxy:
     def add(self, files):
         self.repo.add(*files)
 
+    @map_args()
+    def diff(self):
+        self.repo.diff()
+
     @map_args(arg_mappings=["key"])
     def cat(self, key):
         s = self.repo.cat(key)
@@ -153,6 +157,12 @@ class BaseParserFactory(ParserFactory):
             func=repository.cat
         )
         parser_cat.add_argument("key")
+
+        # Sub-parser for 'diff' command
+        parser_cat = subparsers.add_parser("diff")
+        parser_cat.set_defaults(
+            func=repository.diff
+        )
 
         # Sub-parser for 'commit' command
         parser_commit = subparsers.add_parser("commit")
