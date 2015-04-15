@@ -55,10 +55,34 @@ class NitRepository(Repository):
         return str(obj)
 
     def commit(self):
+        abs_file_path = os.path.join(
+            self.storage.project_dir_path, "a"
+        )
+
+        with open(abs_file_path, 'wb') as file:
+            file.write(b"a1")
+
         obj = Tree()
-        for key, relative_file_path, blob in self.add("a", "b"):
+        for key, relative_file_path, blob in self.add("a"):
             obj.add_node(Tree.Node(relative_file_path, key))
         self.storage.put(obj)
+
+        with open(abs_file_path, 'wb') as file:
+            file.write(b"a2")
+
+        obj2 = Tree()
+        for key, relative_file_path, blob in self.add("a", "b"):
+            obj2.add_node(Tree.Node(relative_file_path, key))
+        self.storage.put(obj2)
+
+        obj.diff(obj2)
+
+        obj3 = Tree()
+        for key, relative_file_path, blob in self.add("c"):
+            obj3.add_node(Tree.Node(relative_file_path, key))
+        self.storage.put(obj3)
+
+        obj.diff(obj3)
 
     def checkout(self):
         raise NotImplementedError("checkout")

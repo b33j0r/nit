@@ -1,5 +1,7 @@
 # Nit
 
+Nit as in not-git; alternatively, nit-wit, in line with Linus' original reasoning
+
 
 ## Purpose
 

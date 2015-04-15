@@ -5,7 +5,14 @@ I had an idea to do this, and after some googling used this as a starting point:
 http://leigh.cudd.li/article/Cross_Platform_Colorized_Logger_Output_Using_Pythons_logging_Module_And_Colorama
 """
 
-from logging import StreamHandler, DEBUG, getLogger as realGetLogger, Formatter
+from logging import (
+    StreamHandler,
+    DEBUG,
+    WARN,
+    INFO,
+    getLogger as realGetLogger,
+    Formatter
+)
 
 from colorama import Fore, Back, Style, Cursor
 

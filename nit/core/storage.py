@@ -221,7 +221,6 @@ class BaseStorage(Storage):
 
     def get_object_key_for_content(self, content):
         """
-
         :param content:
         :return:
         """

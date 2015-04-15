@@ -72,14 +72,14 @@ class NitSerializer(BaseSerializer):
                     node.key + "\0", encoding='ascii'
                 )
                 memory_serializer.write_string(
-                    node.relative_file_path + "\0", encoding='ascii'
+                    node.path + "\0", encoding='ascii'
                 )
 
                 logger.debug(
                     ("Serialized Tree.Node:\n"
                      "    Key:  {}\n"
                      "    Path: {}").format(
-                        node.key, node.relative_file_path
+                        node.key, node.path
                     )
                 )
 
