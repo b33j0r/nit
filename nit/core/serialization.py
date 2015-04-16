@@ -67,6 +67,12 @@ class BaseSerializer(Serializer):
     def _deserialize_get_obj_cls(self):
         raise NotImplementedError("_deserialize_get_obj_cls")
 
+    def serialize_index(self, index):
+        raise NotImplementedError("serialize_index")
+
+    def deserialize_index(self, index_cls):
+        raise NotImplementedError("deserialize_index")
+
     def serialize_blob(self, blob):
         raise NotImplementedError("serialize_blob")
 
@@ -78,12 +84,6 @@ class BaseSerializer(Serializer):
 
     def deserialize_tree(self, tree_cls):
         raise NotImplementedError("deserialize_tree")
-
-    def serialize_index(self, index):
-        raise NotImplementedError("serialize_index")
-
-    def deserialize_index(self, index_cls):
-        raise NotImplementedError("deserialize_index")
 
     def write_bytes(self, b):
         self.stream.write(b)

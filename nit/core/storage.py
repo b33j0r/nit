@@ -141,6 +141,20 @@ class BaseStorage(Storage):
         """
         return os.path.join(self.repo_dir_path, self.object_dir_name)
 
+    @property
+    def index_name(self):
+        """
+
+        """
+        return "index"
+
+    @property
+    def index_path(self):
+        """
+        The absolute path of the index within the repository
+        """
+        return os.path.join(self.repo_dir_path, self.index_name)
+
     def destroy(self, ignore_errors=True):
         """
 
@@ -198,6 +212,19 @@ class BaseStorage(Storage):
         :return:
         """
         return self.get_object(key)
+
+    def put_index(self, index):
+        with open(self.index_path, 'wb') as file:
+            s = self._serialization_cls(file)
+            s.serialize(index)
+
+    def get_index(self):
+        try:
+            with open(self.index_path, 'rb') as f:
+                s = self._serialization_cls(f)
+                return s.deserialize()
+        except FileNotFoundError:
+            return None
 
     def put_blob(self, blob):
         return self.put_object(blob)

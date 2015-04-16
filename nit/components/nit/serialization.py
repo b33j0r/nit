@@ -2,6 +2,7 @@
 """
 """
 from io import BytesIO
+from nit.core.index import Index
 
 from nit.core.log import getLogger
 from nit.core.serialization import BaseSerializer
@@ -19,7 +20,8 @@ class NitSerializer(BaseSerializer):
 
     obj_type_mapping = {
         "blob": Blob,
-        "tree": Tree
+        "tree": Tree,
+        "index": Index
     }
 
     def _deserialize_get_obj_cls(self):
@@ -49,6 +51,21 @@ class NitSerializer(BaseSerializer):
         obj_len = int(obj_len)
         return obj_len, obj_type
 
+    def serialize_index(self, index):
+        logger.debug("Serializing Index")
+
+        content = self._serialize_tree_to_bytes(index)
+
+        self.serialize_signature("index", len(content))
+        self.write_bytes(content)
+
+    def deserialize_index(self, index_cls):
+        logger.debug("Deserializing Index")
+
+        index = self._deserialize_tree_from_bytes(index_cls)
+
+        return index
+
     def serialize_blob(self, blob):
         logger.debug("Serializing Blob")
 
@@ -61,9 +78,7 @@ class NitSerializer(BaseSerializer):
 
         return blob_cls(self.read_bytes())
 
-    def serialize_tree(self, tree):
-        logger.debug("Serializing Tree")
-
+    def _serialize_tree_to_bytes(self, tree):
         with BytesIO() as memory_file:
             memory_serializer = self.__class__(memory_file)
 
@@ -85,15 +100,18 @@ class NitSerializer(BaseSerializer):
 
             memory_file.seek(0)
             content = memory_file.read()
+        return content
+
+    def serialize_tree(self, tree):
+        logger.debug("Serializing Tree")
+
+        content = self._serialize_tree_to_bytes(tree)
 
         self.serialize_signature("tree", len(content))
         self.write_bytes(content)
 
-    def deserialize_tree(self, tree_cls):
+    def _deserialize_tree_from_bytes(self, tree_cls):
         tree = tree_cls()
-
-        logger.debug("Deserializing Tree")
-
         while True:
             key = self.read_bytes_until().decode(encoding='ascii')
             if not key:
@@ -110,11 +128,11 @@ class NitSerializer(BaseSerializer):
             )
 
             tree.add_node(tree_cls.Node(relative_file_path=path, key=key))
-
         return tree
 
-    def serialize_index(self, index):
-        self.serialize_tree(index)
+    def deserialize_tree(self, tree_cls):
+        logger.debug("Deserializing Tree")
 
-    def deserialize_index(self, index_cls):
-        return self.deserialize_tree(index_cls)
+        tree = self._deserialize_tree_from_bytes(tree_cls)
+
+        return tree

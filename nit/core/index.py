@@ -9,6 +9,16 @@ class Index(Tree):
     
     """
     """
-    
-    def __init__(self):
-        super(Index, self).__init__()
+
+    def accept_put(self, storage):
+        storage.put_index(self)
+
+    def accept_serializer(self, serializer):
+        serializer.serialize_index(self)
+
+    @classmethod
+    def accept_deserializer(cls, deserializer):
+        return deserializer.deserialize_index(cls)
+
+    def add_node(self, tree_node):
+        return super().add_node(tree_node)

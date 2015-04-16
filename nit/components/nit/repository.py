@@ -37,6 +37,10 @@ class NitRepository(Repository):
 
     def add(self, *relative_file_paths):
         blobs = []
+        index = self.storage.get_index()
+        if not index:
+            from nit.core.index import Index
+            index = Index()
         for relative_file_path in relative_file_paths:
             abs_file_path = os.path.join(
                 self.storage.project_dir_path, relative_file_path
@@ -52,6 +56,9 @@ class NitRepository(Repository):
                 blob = Blob(contents)
                 key = self.storage.put(blob)
                 blobs.append((key, relative_file_path, blob))
+                node = Tree.Node(relative_file_path, key)
+                index.add_node(node)
+        self.storage.put_index(index)
         return blobs
 
     def cat(self, key):

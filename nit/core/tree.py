@@ -94,9 +94,15 @@ class Tree(Storable):
         )
 
     def add_node(self, tree_node):
+        if tree_node in self._nodeset:
+            return False
+        existing_node = self.file_to_node.get(tree_node.path)
+        if existing_node:
+            self.remove_node(existing_node)
         self._nodeset.add(tree_node)
         self._key_to_path[tree_node.key] = tree_node.path
         self._path_to_key[tree_node.path] = tree_node.key
+        return True
 
     def remove_node(self, tree_node):
         self._nodeset.remove(tree_node)
