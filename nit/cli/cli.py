@@ -53,8 +53,9 @@ class RepositoryProxy:
     def init(self, force=None):
         self.repo.create(force=force)
 
-    def status(self, args):
-        print("STATUS was called with {}".format(args))
+    @map_args(kwarg_mappings=[])
+    def status(self):
+        self.repo.status()
 
     @map_args(arg_mappings=["files"])
     def add(self, files):

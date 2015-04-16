@@ -53,14 +53,22 @@ class Storage(metaclass=ABCMeta):
     @abstractmethod
     def put(self, storable):
         """
-        Inserts a `Storable` into the Storage.
+        Writes a `Storable` to the Storage.
 
         :param storable (Storable): The object to insert
         """
         pass
 
     @abstractmethod
-    def get(self, key):
+    def get_ref(self, ref):
+        pass
+
+    @abstractmethod
+    def put_ref(self, ref, key):
+        pass
+
+    @abstractmethod
+    def get_object(self, keyish):
         """
         Returns an instance of `Storable` having the given `key`
 
@@ -70,11 +78,12 @@ class Storage(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def put_blob(self, blob):
-        pass
+    def get_index(self):
+        """
+        Returns the index
 
-    @abstractmethod
-    def put_tree(self, tree):
+        :return (Index):
+        """
         pass
 
 
@@ -142,6 +151,20 @@ class BaseStorage(Storage):
         return os.path.join(self.repo_dir_path, self.object_dir_name)
 
     @property
+    def refs_dir_name(self):
+        """
+
+        """
+        return "refs"
+
+    @property
+    def refs_dir_path(self):
+        """
+        The absolute path of the object directory within the repository
+        """
+        return os.path.join(self.repo_dir_path, self.refs_dir_name)
+
+    @property
     def index_name(self):
         """
 
@@ -195,6 +218,7 @@ class BaseStorage(Storage):
 
     def _create_dir_structure(self):
         os.makedirs(self.repo_dir_path)
+        os.makedirs(self.refs_dir_path)
         os.makedirs(self.object_dir_path, exist_ok=True)
 
     def put(self, obj):
@@ -205,13 +229,19 @@ class BaseStorage(Storage):
         """
         return obj.accept_put(self)
 
-    def get(self, key):
-        """
+    def put_ref(self, ref, key):
+        ref_path = os.path.join(self.refs_dir_path, ref)
+        ref_dir_path = os.path.dirname(ref_path)
+        os.makedirs(ref_dir_path, exist_ok=True)
+        with open(ref_path, 'wb') as file:
+            b = key.encode(encoding='utf-8')
+            file.write(b)
 
-        :param key:
-        :return:
-        """
-        return self.get_object(key)
+    def get_ref(self, ref):
+        ref_path = os.path.join(self.refs_dir_path, ref)
+        with open(ref_path, 'rb') as file:
+            b = file.read()
+            return b.decode(encoding='utf-8')
 
     def put_index(self, index):
         with open(self.index_path, 'wb') as file:

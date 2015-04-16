@@ -9,7 +9,6 @@ from nit.core.serialization import BaseSerializer
 from nit.core.tree import Tree
 from nit.core.blob import Blob
 
-
 logger = getLogger(__name__)
 
 
@@ -18,11 +17,20 @@ class NitSerializer(BaseSerializer):
     """
     """
 
+    CHUNK_SEP_BYTE = b"\n"
+    FIELD_SEP_BYTE = b" "
+
+    CHUNK_SEP_STR = CHUNK_SEP_BYTE.decode()
+    FIELD_SEP_STR = FIELD_SEP_BYTE.decode()
+
     obj_type_mapping = {
         "blob": Blob,
         "tree": Tree,
         "index": Index
     }
+
+    def __init__(self, stream):
+        super().__init__(stream)
 
     def _deserialize_get_obj_cls(self):
         obj_len, obj_type = self.deserialize_signature()
@@ -36,18 +44,20 @@ class NitSerializer(BaseSerializer):
 
     def serialize_signature(self, obj_type, obj_len):
         self.write_string(
-            "{obj_type} {obj_len}\0".format(
+            "{obj_type}{FIELD_SEP_STR}{obj_len}{CHUNK_SEP_STR}".format(
                 obj_type=obj_type,
-                obj_len=obj_len
+                obj_len=obj_len,
+                FIELD_SEP_STR=self.FIELD_SEP_STR,
+                CHUNK_SEP_STR=self.CHUNK_SEP_STR
             ),
             encoding="ascii"
         )
 
     def deserialize_signature(self):
-        signature = self.read_bytes_until().decode(
+        signature = self.read_bytes_until(self.CHUNK_SEP_BYTE).decode(
             encoding="ascii"
         )
-        obj_type, obj_len = signature.split(" ")
+        obj_type, obj_len = signature.split(self.FIELD_SEP_STR)
         obj_len = int(obj_len)
         return obj_len, obj_type
 
@@ -84,10 +94,10 @@ class NitSerializer(BaseSerializer):
 
             for node in tree.nodes:
                 memory_serializer.write_string(
-                    node.key + "\0", encoding='ascii'
+                    node.key + self.FIELD_SEP_STR, encoding='ascii'
                 )
                 memory_serializer.write_string(
-                    node.path + "\0", encoding='ascii'
+                    node.path + self.CHUNK_SEP_STR, encoding='ascii'
                 )
 
                 logger.debug(
@@ -113,11 +123,11 @@ class NitSerializer(BaseSerializer):
     def _deserialize_tree_from_bytes(self, tree_cls):
         tree = tree_cls()
         while True:
-            key = self.read_bytes_until().decode(encoding='ascii')
+            key = self.read_bytes_until(self.FIELD_SEP_BYTE).decode(encoding='ascii')
             if not key:
                 break
 
-            path = self.read_bytes_until().decode(encoding='ascii')
+            path = self.read_bytes_until(self.CHUNK_SEP_BYTE).decode(encoding='ascii')
 
             logger.debug(
                 ("Deserialized TreeNode:\n"

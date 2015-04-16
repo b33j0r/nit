@@ -15,6 +15,10 @@ class Repository(metaclass=ABCMeta):
         pass
 
     @abstractmethod
+    def status(self):
+        pass
+
+    @abstractmethod
     def add(self, relative_file_path):
         pass
 
