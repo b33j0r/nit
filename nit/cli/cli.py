@@ -255,6 +255,8 @@ def main(*args, name="nit"):
 
     try:
         args = setup(args, name)
+    except SystemExit as exc:
+        return exc.code
     except:
         logger.critical("Command-line interface "
                         "failed during setup()")

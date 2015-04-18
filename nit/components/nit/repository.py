@@ -83,6 +83,8 @@ class NitRepository(Repository):
 
     def commit(self):
         index = self.storage.get_index()
+        if not index:
+            raise NitUserError("Nothing to commit!")
         key = self.storage.put_tree(index)
         self.storage.put_ref("HEAD", key)
 

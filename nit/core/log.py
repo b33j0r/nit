@@ -25,7 +25,11 @@ class ColorizedStreamHandler(StreamHandler):
     A colorized output SteamHandler
     """
 
-    def __init__(self, stream=None, tty_formatter=None):
+    def __init__(
+            self,
+            stream=None,
+            tty_formatter=None
+    ):
         super().__init__(stream)
         self.tty_formatter = tty_formatter
 
@@ -33,20 +37,25 @@ class ColorizedStreamHandler(StreamHandler):
         if self.is_tty:
             return self.tty_formatter.format(record)
         else:
-            return super(ColorizedStreamHandler, self).format(record)
+            return super(
+                ColorizedStreamHandler, self
+            ).format(record)
 
     @property
     def is_tty(self):
 
         """
-        Check if we are using a "real" TTY. If we are not using a TTY it means that
+        Check if we are using a "real" TTY.
+        If we are not using a TTY it means that
         the colour output should be disabled.
 
         :return (bool): True if using a TTY status
         """
 
         try:
-            return getattr(self.stream, 'isatty', None)()
+            return getattr(
+                self.stream, 'isatty', None
+            )()
         except AttributeError:
             return False
 
@@ -61,7 +70,13 @@ class ColorizedFormatter(Formatter):
 
         super().__init__(fmt, datefmt, style)
 
-    def colorizeString(self, string, fore=None, back=None, style=Style.NORMAL):
+    def colorizeString(
+            self,
+            string,
+            fore=None,
+            back=None,
+            style=Style.NORMAL
+    ):
         parts = []
 
         if style:
@@ -77,21 +92,38 @@ class ColorizedFormatter(Formatter):
 
         return "".join(parts)
 
-    def formatMessagePrefix(self, prefix="", fore=None, back=None, style=None):
+    def formatMessagePrefix(
+            self,
+            prefix="",
+            fore=None,
+            back=None,
+            style=None
+    ):
         if not prefix:
             return ""
 
         prefix_len = len(prefix)
         prefix_padding = (9-prefix_len) // 2
 
-        prefix_padded = " "*prefix_padding + prefix + " "*prefix_padding
+        prefix_padded = (
+            " "*prefix_padding +
+            prefix +
+            " "*prefix_padding
+        )
 
         return self.colorizeString(
-            prefix_padded, fore=fore, back=back, style=style
+            prefix_padded,
+            fore=fore,
+            back=back,
+            style=style
         )
 
     def formatMessageSummary(
-            self, record, fore=None, back=None, style=Style.RESET_ALL
+            self,
+            record,
+            fore=None,
+            back=None,
+            style=Style.RESET_ALL
     ):
         return self.colorizeString(
             super().formatMessage(record),
@@ -100,58 +132,61 @@ class ColorizedFormatter(Formatter):
             style=style
         )
 
-    def formatMessageCritical(self, record):
+    def formatMessagePrefixed(
+            self,
+            record,
+            prefix,
+            fore,
+            back,
+            msg_fore
+    ):
         return (
             self.formatMessagePrefix(
-                prefix="BUG",
-                fore=Fore.LIGHTWHITE_EX,
-                back=Back.LIGHTMAGENTA_EX,
+                prefix=prefix,
+                fore=fore,
+                back=back,
                 style=Style.BRIGHT
             ) + self.prefix_separator +
             self.formatMessageSummary(
                 record,
-                fore=Fore.LIGHTMAGENTA_EX
+                fore=msg_fore
             )
+        )
+
+    def formatMessageCritical(self, record):
+        return self.formatMessagePrefixed(
+            record,
+            "BUG",
+            Fore.LIGHTWHITE_EX,
+            Back.LIGHTMAGENTA_EX,
+            Fore.LIGHTMAGENTA_EX
         )
 
     def formatMessageError(self, record):
-        return (
-            self.formatMessagePrefix(
-                prefix="ERROR",
-                fore=Fore.LIGHTWHITE_EX,
-                back=Back.LIGHTRED_EX,
-                style=Style.BRIGHT
-            ) + self.prefix_separator +
-            self.formatMessageSummary(
-                record,
-                fore=Fore.LIGHTRED_EX
-            )
+        return self.formatMessagePrefixed(
+            record,
+            "ERROR",
+            Fore.LIGHTWHITE_EX,
+            Back.LIGHTRED_EX,
+            Fore.LIGHTRED_EX
         )
 
     def formatMessageWarning(self, record):
-        return (
-            self.formatMessagePrefix(
-                prefix="WARNING",
-                fore=Fore.BLACK,
-                back=Back.LIGHTYELLOW_EX
-            ) + self.prefix_separator +
-            self.formatMessageSummary(
-                record,
-                fore=Fore.LIGHTYELLOW_EX
-            )
+        return self.formatMessagePrefixed(
+            record,
+            "WARNING",
+            Fore.BLACK,
+            Back.LIGHTYELLOW_EX,
+            Fore.LIGHTYELLOW_EX
         )
 
     def formatMessageDebug(self, record):
-        return (
-            self.formatMessagePrefix(
-                prefix="DEBUG",
-                fore=Fore.BLACK,
-                back=Back.LIGHTCYAN_EX
-            ) + self.prefix_separator +
-            self.formatMessageSummary(
-                record,
-                fore=Fore.LIGHTCYAN_EX
-            )
+        return self.formatMessagePrefixed(
+            record,
+            "DEBUG",
+            Fore.BLACK,
+            Back.LIGHTCYAN_EX,
+            Fore.LIGHTCYAN_EX
         )
 
     def formatMessageInfo(self, record):
@@ -232,9 +267,13 @@ def getLogger(name=None, fmt='{message}'):
         bug_message = "{}\n\n{}".format(
             message, traceback.format_exc()
         )
-        message = "[Unhandled Error]\n\n" + bug_message
+        message = (
+            "[Unhandled Error]\n\n" +
+            bug_message
+        )
         _critical(message, **kwargs)
 
-    log.critical = log.fatal = MethodType(critical, log)
+    log.critical = MethodType(critical, log)
+    log.fatal = log.critical
 
     return log
