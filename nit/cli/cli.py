@@ -2,13 +2,13 @@
 """
 """
 import sys
+import os
 import argparse
 from abc import ABCMeta
 from functools import wraps
 
 from nit.core.log import getLogger
-from nit.core.errors import NitUserError, NitInternalError
-
+from nit.core.errors import NitExpectedError, NitUnexpectedError
 
 logger = getLogger(__name__)
 
@@ -189,15 +189,36 @@ def parser_test(*args, **kwargs):
     raise NitLoggerTestException()
 
 
-def main(*args, name="nit"):
-    import os
-    import colorama
-    colorama.init()
+def run(args):
+    status_code = 0
+    try:
+        args.func(parsed_args=args)
 
-    from nit.components.nit.repository import NitRepository
+    except NitExpectedError as exc:
+        status_code = 1
+        logger.error(str(exc))
 
-    args = args or sys.argv
+    except NitUnexpectedError as exc:
+        status_code = 2
+        logger.critical(str(exc))
 
+    except NitLoggerTestException as exc:
+        logger.setLevel("DEBUG")
+        logger.critical(str(exc))
+        logger.error(str(exc))
+        logger.warn(str(exc))
+        logger.debug(str(exc))
+        logger.info(str(exc))
+
+    except Exception as exc:
+        status_code = 3
+        logger.critical(str(exc))
+
+    finally:
+        return status_code
+
+
+def setup(args, name):
     logger.debug(
         (
             logger.Fore.LIGHTBLUE_EX +
@@ -208,44 +229,47 @@ def main(*args, name="nit"):
         )
     )
 
+    from nit.components.nit.repository import NitRepository
+
     nit_repo = NitRepository(os.getcwd())
     repo = RepositoryProxy(nit_repo)
     parser_factory = BaseParserFactory()
     parser = parser_factory.build_parser(repo)
     args = parser.parse_args(args)
+    return args
 
-    status_code = 0
+
+def cleanup(status_code):
+    logger.debug(
+        (
+            logger.Fore.LIGHTBLUE_EX +
+            "--- EXIT with status code {}" +
+            logger.Fore.RESET
+        ).format(status_code)
+    )
+    return status_code
+
+
+def main(*args, name="nit"):
+    args = args or sys.argv
+
     try:
-        args.func(parsed_args=args)
+        args = setup(args, name)
+    except:
+        logger.critical("Command-line interface "
+                        "failed during setup()")
+        return -1
 
-    except NitUserError as exc:
-        status_code = 1
-        logger.error(str(exc))
+    try:
+        status_code = run(args)
+    except:
+        logger.critical("Command-line interface "
+                        "failed during run()")
+        return -2
 
-    except NitInternalError as exc:
-        status_code = 2
-        logger.critical(str(exc))
-
-    except NitLoggerTestException as exc:
-        logger.critical(str(exc))
-        logger.error(str(exc))
-        logger.warn(str(exc))
-        logger.debug(str(exc))
-        logger.info(str(exc))
-
-    except Exception as exc:
-        status_code = 3
-        import traceback
-        logger.critical("[Unhandled Error] " + str(exc))
-        logger.debug("\n" + traceback.format_exc())
-
-    finally:
-        logger.debug(
-            (
-                logger.Fore.LIGHTBLUE_EX +
-                "--- EXIT with status code {}" +
-                logger.Fore.RESET
-            ).format(status_code)
-        )
-        colorama.deinit()
-        return status_code
+    try:
+        return cleanup(status_code)
+    except:
+        logger.critical("Command-line interface "
+                        "failed during cleanup()")
+        return -3

@@ -7,7 +7,7 @@ from nit.core.log import getLogger
 from nit.core.blob import Blob
 from nit.components.nit.storage import NitStorage
 from nit.components.nit.serialization import NitSerializer
-from nit.core.errors import NitUserError
+from nit.core.errors import NitUserError, NitRefNotFoundError
 from nit.core.repository import Repository
 from nit.core.tree import Tree
 
@@ -36,7 +36,11 @@ class NitRepository(Repository):
         self.storage.destroy()
 
     def status(self):
-        head_key = self.storage.get_ref("HEAD")
+        try:
+            head_key = self.storage.get_ref("HEAD")
+        except NitRefNotFoundError as exc:
+            logger.info("Initial commit")
+            return
         head = self.storage.get_object(head_key)
         index = self.storage.get_index()
         diff = head.diff(index)

@@ -14,7 +14,7 @@ import shutil
 
 from nit.core.log import getLogger
 from nit.core.serialization import Serializable, BaseSerializer
-from nit.core.errors import NitUserError
+from nit.core.errors import NitUserError, NitRefNotFoundError
 
 
 logger = getLogger(__name__)
@@ -65,6 +65,10 @@ class Storage(metaclass=ABCMeta):
 
     @abstractmethod
     def put_ref(self, ref, key):
+        pass
+
+    @abstractmethod
+    def get_treeish(self, treeish):
         pass
 
     @abstractmethod
@@ -229,6 +233,9 @@ class BaseStorage(Storage):
         """
         return obj.accept_put(self)
 
+    def get_treeish(self, treeish):
+        return self.get_object(treeish)
+
     def put_ref(self, ref, key):
         ref_path = os.path.join(self.refs_dir_path, ref)
         ref_dir_path = os.path.dirname(ref_path)
@@ -239,6 +246,8 @@ class BaseStorage(Storage):
 
     def get_ref(self, ref):
         ref_path = os.path.join(self.refs_dir_path, ref)
+        if not os.path.exists(ref_path):
+            raise NitRefNotFoundError(ref_path)
         with open(ref_path, 'rb') as file:
             b = file.read()
             # Not necessary, type hinting for the IDE

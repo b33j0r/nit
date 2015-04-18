@@ -8,11 +8,26 @@ class NitError(Exception):
     """
 
 
-class NitInternalError(NitError):
+class NitUnexpectedError(Exception):
     """
     """
 
 
-class NitUserError(NitError):
+class NitInternalError(NitUnexpectedError):
+    """
+    """
+
+
+class NitExpectedError(Exception):
+    """
+    """
+
+
+class NitUserError(NitExpectedError):
+    """
+    """
+
+
+class NitRefNotFoundError(NitExpectedError):
     """
     """

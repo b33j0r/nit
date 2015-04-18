@@ -196,8 +196,6 @@ def getLogger(name=None, fmt='{message}'):
     handler.setLevel(DEBUG)
     handler.setFormatter(formatter)
 
-    log_level = os.environ.get("NIT_LOG_LEVEL", None) or "INFO"
-
     log.addHandler(handler)
     log.propagate = 0  # Don't bubble up to the root logger
 
@@ -206,12 +204,14 @@ def getLogger(name=None, fmt='{message}'):
     log.Style = Style
     log.Cursor = Cursor
 
+    log_level = os.environ.get("NIT_LOG_LEVEL", None) or "INFO"
+
     # This is safer to do than defining a custom TRACE level...
     # You can get into problems with 3rd party libraries by
     # using logging.addLevelName. This keeps it confined to nit
 
     trace_level = (log_level == "TRACE")
-    log_level = "DEBUG" if (log_level == "TRACE") else log_level
+    log_level = "DEBUG" if trace_level else log_level
     log_level = getattr(logging, log_level.upper())
 
     log.setLevel(log_level)
@@ -225,5 +225,16 @@ def getLogger(name=None, fmt='{message}'):
 
     from types import MethodType
     log.trace = MethodType(trace, log)
+
+    _critical = log.critical
+    def critical(self, message, **kwargs):
+        import traceback
+        bug_message = "{}\n\n{}".format(
+            message, traceback.format_exc()
+        )
+        message = "[Unhandled Error]\n\n" + bug_message
+        _critical(message, **kwargs)
+
+    log.critical = log.fatal = MethodType(critical, log)
 
     return log
