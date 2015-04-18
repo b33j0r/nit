@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export NIT_DEBUG_LEVEL=TRACE
+export NIT_LOG_LEVEL=INFO
 
 rm a b c
 
@@ -8,7 +8,10 @@ nit init --force
 echo a > a
 
 nit add a
+nit status
+
 nit commit
+nit status
 
 echo b > b
 

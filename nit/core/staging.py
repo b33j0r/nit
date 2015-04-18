@@ -4,7 +4,7 @@
 from abc import ABCMeta, abstractmethod
 
 
-class StagingStrategy:
+class Stage:
     """
     """
     def __init__(self, storage):

@@ -8,6 +8,82 @@ from nit.core.log import getLogger
 logger = getLogger(__name__)
 
 
+class TreeDiffFormatter:
+
+    """
+    """
+
+    def format_node(
+            self,
+            node,
+            key_color=logger.Fore.LIGHTBLACK_EX,
+            path_color=logger.Fore.RESET
+    ):
+        return (
+            key_color + "{n.key}" +
+            logger.Fore.RESET + " " +
+            path_color + "{n.path}" +
+            logger.Fore.RESET
+        ).format(n=node)
+
+    def format_nodes(
+            self,
+            nodes,
+            name,
+            header_color=logger.Fore.LIGHTWHITE_EX,
+            key_color=logger.Fore.LIGHTBLACK_EX,
+            path_color=logger.Fore.RESET
+    ):
+        if not nodes:
+            return ""
+
+        parts = [
+            header_color,
+            name,
+            logger.Fore.RESET,
+            "\n"
+        ]
+
+        node_parts = [
+            self.format_node(
+                node,
+                key_color,
+                path_color
+            )
+            for node in nodes
+        ]
+        node_parts_str = "\n".join(node_parts)
+        parts.append(node_parts_str)
+        parts.append("\n\n")
+        return "".join(parts)
+
+
+    def format(self, diff):
+        s = "{}{}{}".format(
+            self.format_nodes(
+                diff.added_nodes,
+                "Added",
+                logger.Fore.GREEN
+            ),
+            self.format_nodes(
+                diff.modified_nodes,
+                "Modified",
+                logger.Fore.YELLOW
+            ),
+            self.format_nodes(
+                diff.removed_nodes,
+                "Removed",
+                logger.Fore.RED
+            )
+        )
+        if s.endswith("\n\n"):
+            s = s[:-1]
+
+        if not s.strip():
+            return "No changes detected"
+
+        return s
+
 class TreeDiff:
 
     """
@@ -17,7 +93,14 @@ class TreeDiff:
         logger.trace("Creating TreeDiff")
         self.tree_from = tree_from
         self.tree_to = tree_to
-        self.added_nodes, self.modified_nodes, self.removed_nodes = self._diff()
+
+        self.formatter = TreeDiffFormatter()
+
+        (
+            self.added_nodes,
+            self.modified_nodes,
+            self.removed_nodes
+        ) = self._diff()
 
     def _diff(self):
         a_key_to_node = self.tree_from.key_to_node
@@ -55,47 +138,6 @@ class TreeDiff:
         return added_nodes, modified_nodes, removed_nodes
 
     def __str__(self):
-        # This needs some cleaning up... haven't decided how to do it yet
-
         logger.trace("Rendering string for TreeDiff")
 
-        def node_template(color):
-            color = logger.Fore.LIGHTBLACK_EX
-            return (
-                color + "{n.key}" + logger.Fore.RESET + " " + "{n.path}"
-            )
-
-        s = "{}{}{}".format(
-            (
-                logger.Fore.LIGHTWHITE_EX +
-                logger.Fore.GREEN +
-                "Added" + logger.Fore.RESET +
-                "\n" + logger.Fore.RESET +
-                "\n".join(
-                    node_template(logger.Fore.GREEN).format(n=n) for n in self.added_nodes
-                ) + "\n\n"
-            ) if self.added_nodes else "",
-
-            (
-                logger.Fore.LIGHTWHITE_EX +
-                logger.Fore.YELLOW +
-                "Modified" + logger.Fore.RESET +
-                "\n" + logger.Fore.RESET +
-                "\n".join(
-                    node_template(logger.Fore.YELLOW).format(n=n) for n in self.modified_nodes
-                ) + "\n\n"
-            ) if self.modified_nodes else "",
-
-            (
-                logger.Fore.LIGHTWHITE_EX +
-                logger.Fore.RED +
-                "Removed" + logger.Fore.RESET +
-                "\n" + logger.Fore.RESET +
-                "\n".join(
-                    node_template(logger.Fore.RED).format(n=n) for n in self.removed_nodes
-                ) + "\n\n"
-            ) if self.removed_nodes else ""
-        )
-        if s.endswith("\n\n"):
-            s = s[:-1]
-        return s
+        return self.formatter.format(self)

@@ -198,9 +198,11 @@ def main(*args, name="nit"):
 
     args = args or sys.argv
 
-    logger.trace(
+    logger.debug(
         (
-            logger.Fore.LIGHTBLUE_EX + "{} {}" + logger.Fore.RESET
+            logger.Fore.LIGHTBLUE_EX +
+            '+++ CALL "{} {}"' +
+            logger.Fore.RESET
         ).format(
             name, " ".join(args)
         )
@@ -238,6 +240,12 @@ def main(*args, name="nit"):
         logger.debug("\n" + traceback.format_exc())
 
     finally:
-        logger.trace("EXIT with status {}\n".format(status_code))
+        logger.debug(
+            (
+                logger.Fore.LIGHTBLUE_EX +
+                "--- EXIT with status code {}" +
+                logger.Fore.RESET
+            ).format(status_code)
+        )
         colorama.deinit()
         return status_code
