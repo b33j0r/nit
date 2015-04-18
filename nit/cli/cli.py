@@ -189,7 +189,7 @@ def parser_test(*args, **kwargs):
     raise NitLoggerTestException()
 
 
-def main(*args):
+def main(*args, name="nit"):
     import os
     import colorama
     colorama.init()
@@ -198,23 +198,30 @@ def main(*args):
 
     args = args or sys.argv
 
+    logger.trace(
+        (
+            logger.Fore.LIGHTBLUE_EX + "{} {}" + logger.Fore.RESET
+        ).format(
+            name, " ".join(args)
+        )
+    )
+
     nit_repo = NitRepository(os.getcwd())
     repo = RepositoryProxy(nit_repo)
     parser_factory = BaseParserFactory()
     parser = parser_factory.build_parser(repo)
     args = parser.parse_args(args)
 
+    status_code = 0
     try:
         args.func(parsed_args=args)
 
-        status_code = 0
-        logger.debug("EXIT with status {}\n".format(status_code))
-        return status_code
-
     except NitUserError as exc:
+        status_code = 1
         logger.error(str(exc))
 
     except NitInternalError as exc:
+        status_code = 2
         logger.critical(str(exc))
 
     except NitLoggerTestException as exc:
@@ -225,13 +232,12 @@ def main(*args):
         logger.info(str(exc))
 
     except Exception as exc:
+        status_code = 3
         import traceback
         logger.critical("[Unhandled Error] " + str(exc))
         logger.debug("\n" + traceback.format_exc())
 
     finally:
+        logger.trace("EXIT with status {}\n".format(status_code))
         colorama.deinit()
-
-    status_code = 1
-    logger.debug("EXIT with status {}\n".format(status_code))
-    return status_code
+        return status_code

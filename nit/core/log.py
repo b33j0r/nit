@@ -13,6 +13,8 @@ from logging import (
     getLogger as realGetLogger,
     Formatter
 )
+import logging
+import os
 
 from colorama import Fore, Back, Style, Cursor
 
@@ -194,14 +196,34 @@ def getLogger(name=None, fmt='{message}'):
     handler.setLevel(DEBUG)
     handler.setFormatter(formatter)
 
+    log_level = os.environ.get("NIT_DEBUG_LEVEL", "DEBUG")
+
+    # This is safer to do than defining a custom TRACE level...
+    # You can get into problems with 3rd party libraries by
+    # using logging.addLevelName. This keeps it confined to nit
+    trace_level = log_level == "TRACE"
+    log_level = "DEBUG" if log_level == "TRACE" else log_level
+
+    log_level = getattr(logging, log_level.upper())
+
     log.addHandler(handler)
-    log.setLevel(DEBUG)
-    #log.setLevel(INFO)
+    log.setLevel(log_level)
     log.propagate = 0  # Don't bubble up to the root logger
 
     log.Fore = Fore
     log.Back = Back
     log.Style = Style
     log.Cursor = Cursor
+
+    if trace_level:
+        def trace(self, *args, **kwargs):
+            self.debug(*args, **kwargs)
+    else:
+        def trace(self, *args, **kwargs):
+            pass
+
+    from types import MethodType
+
+    log.trace = MethodType(trace, log)
 
     return log

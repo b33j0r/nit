@@ -7,6 +7,7 @@ Usage:
 """
 
 import sys
+import os
 from pathlib import Path
 
 this_file_path = Path(__file__)
@@ -17,7 +18,10 @@ project_path = this_dir_path.parent
 # you must convert the path object to a string, as sys.path
 # is still a list of strings in Python 3.4
 
-sys.path.remove(str(this_dir_path))
+try:
+    sys.path.remove(str(this_dir_path))
+except:
+    pass
 sys.path.append(str(project_path))
 
 try:
@@ -38,4 +42,5 @@ except ImportError:
     ))
     raise
 
-cli.main(*sys.argv[1:] or ["--help"])
+name = os.path.basename(__file__)
+cli.main(*sys.argv[1:] or ["--help"], name=name)

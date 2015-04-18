@@ -234,14 +234,16 @@ class BaseStorage(Storage):
         ref_dir_path = os.path.dirname(ref_path)
         os.makedirs(ref_dir_path, exist_ok=True)
         with open(ref_path, 'wb') as file:
-            b = key.encode(encoding='utf-8')
+            b = key.encode()
             file.write(b)
 
     def get_ref(self, ref):
         ref_path = os.path.join(self.refs_dir_path, ref)
         with open(ref_path, 'rb') as file:
             b = file.read()
-            return b.decode(encoding='utf-8')
+            # Not necessary, type hinting for the IDE
+            assert isinstance(b, bytes)
+            return b.decode()
 
     def put_index(self, index):
         with open(self.index_path, 'wb') as file:
@@ -300,7 +302,7 @@ class BaseStorage(Storage):
             key = keyish
         else:
             blob_file_path = os.path.join(self.object_dir_path, keyish + "*")
-            logger.debug(
+            logger.trace(
                 "Searching for an object matching '{}'".format(
                     blob_file_path
                 )

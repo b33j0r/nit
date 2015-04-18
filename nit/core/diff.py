@@ -14,7 +14,7 @@ class TreeDiff:
     """
 
     def __init__(self, tree_from, tree_to):
-        logger.debug("Creating TreeDiff")
+        logger.trace("Creating TreeDiff")
         self.tree_from = tree_from
         self.tree_to = tree_to
         self.added_nodes, self.modified_nodes, self.removed_nodes = self._diff()
@@ -57,7 +57,7 @@ class TreeDiff:
     def __str__(self):
         # This needs some cleaning up... haven't decided how to do it yet
 
-        logger.debug("Rendering string for TreeDiff")
+        logger.trace("Rendering string for TreeDiff")
 
         def node_template(color):
             color = logger.Fore.LIGHTBLACK_EX
