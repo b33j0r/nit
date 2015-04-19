@@ -2,13 +2,17 @@
 """
 """
 import os
+import pathspec
 from abc import ABCMeta
 
 
-class FileIgnorer(metaclass=ABCMeta):
+class PathspecIgnoreStrategy(metaclass=ABCMeta):
 
     """
     """
+
+    def __init__(self, root):
+        pass
 
     def should_ignore(self, file_path):
         pass

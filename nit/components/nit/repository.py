@@ -1,7 +1,9 @@
 #! /usr/bin/env python
 """
 """
+from functools import wraps
 import os
+from pathlib import Path
 
 from nit.core.log import getLogger
 from nit.core.blob import Blob
@@ -28,6 +30,10 @@ class NitRepository(Repository):
             project_dir_path,
             serialization_cls=serialization_cls
         )
+
+    @property
+    def exists(self):
+        return self.storage.exists
 
     def create(self, force=False):
         self.storage.create(force=force)

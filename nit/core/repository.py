@@ -1,11 +1,15 @@
 #! /usr/bin/env python
 """
 """
-from abc import abstractmethod
+from abc import abstractmethod, abstractproperty
 from abc import ABCMeta
 
 
 class Repository(metaclass=ABCMeta):
+    @abstractproperty
+    def exists(self):
+        pass
+
     @abstractmethod
     def create(self, force):
         pass

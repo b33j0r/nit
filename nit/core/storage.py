@@ -4,13 +4,14 @@
 from abc import (
     ABCMeta,
     abstractmethod,
-    abstractclassmethod
-)
+    abstractclassmethod,
+    abstractproperty)
 import io
 import os
 import glob
 import hashlib
 import shutil
+from pathlib import Path
 
 from nit.core.log import getLogger
 from nit.core.serialization import Serializable, BaseSerializer
@@ -41,6 +42,10 @@ class Storage(metaclass=ABCMeta):
 
     """
     """
+
+    @abstractproperty
+    def exists(self):
+        pass
 
     @abstractmethod
     def create(self, force=False):
@@ -141,25 +146,11 @@ class BaseStorage(Storage):
         return os.path.join(self.project_dir_path, self.repo_dir_name)
 
     @property
-    def object_dir_name(self):
-        """
-
-        """
-        return "objects"
-
-    @property
     def object_dir_path(self):
         """
         The absolute path of the object directory within the repository
         """
         return os.path.join(self.repo_dir_path, self.object_dir_name)
-
-    @property
-    def refs_dir_name(self):
-        """
-
-        """
-        return "refs"
 
     @property
     def refs_dir_path(self):
@@ -169,18 +160,15 @@ class BaseStorage(Storage):
         return os.path.join(self.repo_dir_path, self.refs_dir_name)
 
     @property
-    def index_name(self):
-        """
-
-        """
-        return "index"
-
-    @property
     def index_path(self):
         """
         The absolute path of the index within the repository
         """
         return os.path.join(self.repo_dir_path, self.index_name)
+
+    @property
+    def exists(self):
+        return os.path.exists(self.repo_dir_path)
 
     def destroy(self, ignore_errors=True):
         """
@@ -191,7 +179,9 @@ class BaseStorage(Storage):
         logger.debug(
             ("Destroying {repository_name} "
              "repository in {repository_path}").format(
-                repository_name=self.__class__.__name__.replace("Storage", ""),
+                repository_name=self.__class__.__name__.replace(
+                    "Storage", ""
+                ),
                 repository_path=self.repo_dir_path
             )
         )
@@ -212,13 +202,14 @@ class BaseStorage(Storage):
         ))
 
     def _create_verify_repo_dir(self, force):
-        if os.path.exists(self.repo_dir_path):
-            if force:
-                self.destroy()
-            else:
-                raise NitUserError(
-                    "'{}' already exists!".format(self.repo_dir_path)
-                )
+        if not self.exists:
+            return
+        if force:
+            self.destroy()
+        else:
+            raise NitUserError(
+                "'{}' already exists!".format(self.repo_dir_path)
+            )
 
     def _create_dir_structure(self):
         os.makedirs(self.repo_dir_path)
@@ -293,46 +284,6 @@ class BaseStorage(Storage):
         :return:
         """
         return hashlib.sha1(content).hexdigest()
-
-    def get_object_path(self, keyish, must_exist=False):
-        """
-
-        :param keyish:
-        :param must_exist:
-        :return:
-        """
-        if not must_exist:
-            return self.object_dir_path, keyish
-
-        if len(keyish) == 40:
-            blob_file_path = os.path.join(self.object_dir_path, keyish)
-            if not os.path.exists(blob_file_path):
-                raise NitUserError("No object matching '{}'".format(keyish))
-            key = keyish
-        else:
-            blob_file_path = os.path.join(self.object_dir_path, keyish + "*")
-            logger.trace(
-                "Searching for an object matching '{}'".format(
-                    blob_file_path
-                )
-            )
-            search_result = glob.glob(blob_file_path)
-            if len(search_result) == 0:
-                raise NitUserError(
-                    "No object matching '{}'".format(keyish)
-                )
-            if len(search_result) > 1:
-                logger.debug(
-                    "Multiple objects found:\n{}".format(
-                        "\n".join("    " + s for s in search_result)
-                    )
-                )
-                raise NitUserError(
-                    "Multiple objects matching '{}'".format(keyish)
-                )
-            key = os.path.basename(search_result[0])
-
-        return self.object_dir_path, key
 
     def _serialize_object_to_bytes(self, obj):
         """

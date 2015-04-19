@@ -7,7 +7,7 @@ from abc import ABCMeta, abstractmethod
 class Stage:
     """
     """
-    def __init__(self, storage):
+    def __init__(self, project_dir, ignore_strategy_cls=PathspecIgnoreStrategy):
         self.storage = storage
 
     def add(self, file_path):
