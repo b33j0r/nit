@@ -94,7 +94,7 @@ class NitSerializer(BaseSerializer):
                     node.key + self.FIELD_SEP_STR
                 )
                 memory_serializer.write_string(
-                    node.path + self.CHUNK_SEP_STR
+                    str(node.path) + self.CHUNK_SEP_STR
                 )
 
                 logger.trace(

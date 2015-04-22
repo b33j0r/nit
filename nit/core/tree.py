@@ -38,7 +38,7 @@ class Tree(Storable):
             return not self.__eq__(other)
 
         def __lt__(self, other):
-            return self.path < other.path
+            return str(self.path) < str(other.path)
 
     def __init__(self):
         self._nodeset = set()
@@ -72,7 +72,7 @@ class Tree(Storable):
 
     @property
     def file_set(self):
-        return set([n.path for n in self._nodeset])
+        return set([str(n.path) for n in self._nodeset])
 
     @property
     def key_to_node(self):
@@ -83,14 +83,14 @@ class Tree(Storable):
     @property
     def file_to_node(self):
         return {
-            node.path: node for node in self._nodeset
+            str(node.path): node for node in self._nodeset
         }
 
     @property
     def nodes(self):
         return sorted(
             self._nodeset,
-            key=lambda node: node.path
+            key=lambda node: str(node.path)
         )
 
     def add_node(self, tree_node):

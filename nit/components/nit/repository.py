@@ -62,7 +62,7 @@ class NitRepository(Repository):
             index = Index()
 
         file_paths = [
-            self.storage/Path(rfp)
+            self.storage.paths.project/Path(rfp)
             for rfp in relative_file_paths
         ]
 
@@ -73,14 +73,18 @@ class NitRepository(Repository):
                         file_path
                     )
                 )
-            with open(file_path, 'rb') as file:
+            with open(str(file_path), 'rb') as file:
                 contents = file.read()
                 blob = Blob(contents)
                 key = self.storage.put(blob)
-                blobs.append((key, file_path.relative_to(
-                    self.storage.project_dir_path
-                ), blob))
-                node = Tree.Node(relative_file_path, key)
+                relative_file_path = file_path.relative_to(
+                    self.storage.paths.project
+                )
+                blobs.append((key, relative_file_path, blob))
+                node = Tree.Node(
+                    relative_file_path,
+                    key
+                )
                 index.add_node(node)
 
         self.storage.put(index)
