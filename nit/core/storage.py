@@ -171,6 +171,21 @@ class BaseStorage(Storage):
     def get_treeish(self, treeish):
         return self.get_object(treeish)
 
+    def put_symbolic_ref(self, name, ref):
+        ref_path = self.paths.repo/name
+        with open(str(ref_path), 'wb') as file:
+            b = ref.encode()
+            file.write(b)
+
+    def get_symbolic_ref(self, name):
+        ref_path = self.paths.repo/name
+        if not ref_path.exists():
+            raise NitRefNotFoundError(ref_path)
+        with open(str(ref_path), 'rb') as file:
+            b = file.read()
+            head_ref = b.decode()
+        return self.get_ref(head_ref)
+
     def put_ref(self, ref, key):
         ref_path = self.paths.get_ref_path(ref)
         os.makedirs(str(ref_path.parent), exist_ok=True)

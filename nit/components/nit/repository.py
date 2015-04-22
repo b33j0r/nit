@@ -43,7 +43,7 @@ class NitRepository(Repository):
 
     def status(self):
         try:
-            head_key = self.storage.get_ref("HEAD")
+            head_key = self.storage.get_symbolic_ref("HEAD")
         except NitRefNotFoundError as exc:
             logger.info("Initial commit")
             return
@@ -100,7 +100,8 @@ class NitRepository(Repository):
         if not index:
             raise NitUserError("Nothing to commit!")
         key = self.storage.put_tree(index)
-        self.storage.put_ref("HEAD", key)
+        self.storage.put_ref("heads/master", key)
+        self.storage.put_symbolic_ref("HEAD", "heads/master")
 
     def diff(self):
         raise Exception("boo")
