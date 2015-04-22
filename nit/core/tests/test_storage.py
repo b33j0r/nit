@@ -22,13 +22,17 @@ class TestNitStorage(NitTestCase):
 
             test_str = "This is only a test\n"
 
-            storage = NitStorage(project_dir_path)
+            from nit.core.paths import BasePaths
+
+            paths = BasePaths(project_dir_path)
+
+            storage = NitStorage(paths)
             storage.create()
 
             test_blob = Blob(test_str.encode())
-            storage.put(test_blob)
+            key = storage.put(test_blob)
 
-            actual_blob = storage.get(test_blob.key)
+            actual_blob = storage.get_object(key)
             assert actual_blob.content.decode() == test_str
 
         self.assertNotDirExists(project_dir_path)

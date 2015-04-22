@@ -22,12 +22,12 @@ class NitRepository(Repository):
     """
     def __init__(
         self,
-        project_dir_path,
+        paths,
         storage_cls=NitStorage,
         serialization_cls=NitSerializer
     ):
         self.storage = storage_cls(
-            project_dir_path,
+            paths,
             serialization_cls=serialization_cls
         )
 
@@ -61,21 +61,25 @@ class NitRepository(Repository):
             from nit.core.index import Index
             index = Index()
 
-        for relative_file_path in relative_file_paths:
-            abs_file_path = os.path.join(
-                self.storage.project_dir_path, relative_file_path
-            )
-            if not os.path.exists(abs_file_path):
+        file_paths = [
+            self.storage/Path(rfp)
+            for rfp in relative_file_paths
+        ]
+
+        for file_path in file_paths:
+            if not file_path.exists():
                 raise NitUserError(
                     "The file '{}' does not exist".format(
-                        abs_file_path
+                        file_path
                     )
                 )
-            with open(abs_file_path, 'rb') as file:
+            with open(file_path, 'rb') as file:
                 contents = file.read()
                 blob = Blob(contents)
                 key = self.storage.put(blob)
-                blobs.append((key, relative_file_path, blob))
+                blobs.append((key, file_path.relative_to(
+                    self.storage.project_dir_path
+                ), blob))
                 node = Tree.Node(relative_file_path, key)
                 index.add_node(node)
 

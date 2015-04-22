@@ -3,10 +3,9 @@
 
 """
 import abc
-import glob
 from pathlib import Path
-from nit.core.errors import NitUserError
 
+from nit.core.errors import NitUserError
 from nit.core.log import getLogger
 
 
@@ -19,7 +18,7 @@ class Paths(metaclass=abc.ABCMeta):
     A strategy class that determines the file system
     paths for a specific repository implementation.
 
-    For git/nit, this means figuring out where the
+    For git or nit, this means figuring out where the
     "objects", "index", and "HEAD", etc, are.
 
     A Paths implementation shall return a
@@ -40,19 +39,49 @@ class BasePaths(Paths):
     def __init__(
             self,
             current_working_dir_path,
-            repo_name=".nit"
+            repo_name=".nit",
+            verify=True
     ):
-        self.current_working_dir_path = Path(
+        self.current_working_dir = Path(
             current_working_dir_path
         )
+
+        # Due dilligence
+        if verify:
+            if not self.current_working_dir.exists():
+                raise NitUserError(
+                    "Current working directory"
+                    "does not exist: {}".format(
+                        self.current_working_dir
+                    )
+                )
+
+            if not self.current_working_dir.is_dir():
+                raise NitUserError(
+                    "Current working directory"
+                    "is not a directory (?): {}".format(
+                        self.current_working_dir
+                    )
+                )
+
         self._repo_name = repo_name
-        self._repo = self.find_repo_dir(
-            self.current_working_dir_path, repo_name
-        )
 
     def __getattr__(self, name):
+        """
+        Since every attribute of Paths returns a
+        `pathlib.Path`, we provide a convenient mechanism
+        to get a string result for every such attribute
+        :param name:
+        :return:
+        """
         if name.endswith("_str"):
             attr = getattr(self, name[:-4])
+            if not isinstance(attr, Path):
+                raise AttributeError(
+                    "_str postfixes are reserved "
+                    "for attributes that normally return "
+                    "a Path object, see docstring"
+                )
             return str(attr)
         raise AttributeError()
 
@@ -66,8 +95,8 @@ class BasePaths(Paths):
     @property
     def objects_name(self):
         """
-        The name of the subdirectory where we
-        store things like blobs, trees, and commits
+        The name of the subdirectory where a repo
+        stores things like blobs, trees, and commits
         """
         return "objects"
 
@@ -92,32 +121,52 @@ class BasePaths(Paths):
     def head_name(self):
         """
         The name of a special ref that points to
-        the latest commit, e.g. "HEAD"
+        the latest commit, usually "HEAD"
         """
         return "HEAD"
 
     @property
     def repo(self):
-        return self._repo
+        """
+        :return (Path):
+        """
+        return self.find_repo_dir(
+            self.current_working_dir, self.repo_name
+        )
 
     @property
     def project(self):
+        """
+        :return (Path):
+        """
         return self.repo.parent
 
     @property
     def objects(self):
+        """
+        :return (Path):
+        """
         return self.repo/self.objects_name
 
     @property
     def refs(self):
+        """
+        :return (Path):
+        """
         return self.repo/self.refs_name
 
     @property
     def index(self):
+        """
+        :return (Path):
+        """
         return self.repo/self.index_name
 
     @property
     def head(self):
+        """
+        :return (Path):
+        """
         return self.repo/self.head_name
 
     @classmethod
@@ -148,10 +197,11 @@ class BasePaths(Paths):
                 break
 
         else:
-            raise NitUserError((
+            logger.trace((
                 "No repository exists in '{}' "
                 "or its parent directories"
             ).format(cwd))
+            return cwd/repo_name
 
         logger.trace(
             "Repository Directory: {}".format(
@@ -204,6 +254,7 @@ class BasePaths(Paths):
         return self.objects/key
 
     def iter_object_paths_matching(self, keyish):
+        assert keyish
         return self.objects.glob(keyish + "*")
 
     def find_object_paths_matching(self, keyish):

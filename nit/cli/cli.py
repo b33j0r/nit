@@ -10,6 +10,7 @@ from pathlib import Path
 
 from nit.core.log import getLogger
 from nit.core.errors import NitExpectedError, NitUnexpectedError, NitUserError
+from nit.core.paths import BasePaths
 
 logger = getLogger(__name__)
 
@@ -234,21 +235,9 @@ def setup(args, name):
 
     cwd = Path(os.getcwd())
     logger.trace("Working Directory: {}".format(cwd))
-    project_dir_candidates = [cwd] + list(cwd.parents)
-    for path in project_dir_candidates:
-        repo_path = path / ".nit"
-        if repo_path.exists():
-            project_dir = path
-            logger.trace("Repository Directory: {}".format(project_dir))
-            break
-    else:
-        raise NitUserError(
-            "No repository exists in '{}' or its parent directories".format(
-                cwd
-            )
-        )
 
-    nit_repo = NitRepository(str(project_dir))
+    nit_paths = BasePaths(cwd)
+    nit_repo = NitRepository(nit_paths)
     repo = RepositoryProxy(nit_repo)
     parser_factory = BaseParserFactory()
     parser = parser_factory.build_parser(repo)

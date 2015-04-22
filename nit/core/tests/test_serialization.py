@@ -58,6 +58,4 @@ class TestNitSerializer(TestBaseSerializer):
         self.stream.seek(0)
 
         actual_blob = self.serializer.deserialize()
-        self.assertEqual(len(blob), len(actual_blob))
         self.assertEqual(blob.content, actual_blob.content)
-        self.assertEqual(blob.key, actual_blob.key)

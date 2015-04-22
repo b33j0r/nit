@@ -4,6 +4,7 @@
 from tempfile import TemporaryDirectory
 
 from nit.components.nit.repository import NitRepository
+from nit.core.paths import BasePaths
 from nit.core.tests.util import NitTestCase
 
 
@@ -12,11 +13,11 @@ class TestNitRepository(NitTestCase):
     """
     def setUp(self):
         self.temp_dir = TemporaryDirectory()
-        self.project_dir_path = self.temp_dir.name
-        self.repo = NitRepository(self.project_dir_path)
-        self.repo.destroy()
+        self.paths = BasePaths(self.temp_dir.name, verify=False)
+        self.repo = NitRepository(self.paths)
 
     def tearDown(self):
+        self.repo.destroy()
         self.temp_dir.cleanup()
 
     def test_create_should_create_a_repo(self):

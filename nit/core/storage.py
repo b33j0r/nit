@@ -103,25 +103,11 @@ class BaseStorage(Storage):
 
     def __init__(
         self,
-        project_dir_path,
+        paths_strategy,
         serialization_cls=BaseSerializer,
         repo_dir_name=".nit"
     ):
-        if not os.path.exists(project_dir_path):
-            raise NitUserError(
-                "Project directory '{}' does not exist".format(
-                    project_dir_path
-                )
-            )
-        if not os.path.isdir(project_dir_path):
-            raise NitUserError(
-                "Project path '{}' is not a directory".format(
-                    project_dir_path
-                )
-            )
-
-        self._repo_dir_name = repo_dir_name
-        self._project_dir_path = project_dir_path
+        self.paths = paths_strategy
         self._serialization_cls = serialization_cls
 
     @property
@@ -129,46 +115,46 @@ class BaseStorage(Storage):
         """
         The absolute path of the project directory
         """
-        return self._project_dir_path
+        return self.paths.project
 
     @property
     def repo_dir_name(self):
         """
         The name of the repository directory (e.g. '.nit' or '.git')
         """
-        return self._repo_dir_name
+        return self.paths.repo_name
 
     @property
     def repo_dir_path(self):
         """
         The absolute path of the repository directory (e.g. '~/project/.nit')
         """
-        return os.path.join(self.project_dir_path, self.repo_dir_name)
+        return self.paths.repo_str
 
     @property
     def object_dir_path(self):
         """
         The absolute path of the object directory within the repository
         """
-        return os.path.join(self.repo_dir_path, self.object_dir_name)
+        return self.paths.objects_str
 
     @property
     def refs_dir_path(self):
         """
         The absolute path of the object directory within the repository
         """
-        return os.path.join(self.repo_dir_path, self.refs_dir_name)
+        return self.paths.refs_str
 
     @property
     def index_path(self):
         """
         The absolute path of the index within the repository
         """
-        return os.path.join(self.repo_dir_path, self.index_name)
+        return self.paths.index_str
 
     @property
     def exists(self):
-        return os.path.exists(self.repo_dir_path)
+        return self.paths.repo.exists()
 
     def destroy(self, ignore_errors=True):
         """
@@ -271,8 +257,10 @@ class BaseStorage(Storage):
         return key
 
     def get_object(self, keyish):
-        dir_path, file_name = self.get_object_path(keyish, must_exist=True)
-        file_path = os.path.join(dir_path, file_name)
+        file_path = self.paths.get_object_path(
+            keyish, must_exist=True
+        )
+        file_path = str(file_path)
 
         with open(file_path, 'rb') as f:
             s = self._serialization_cls(f)
@@ -306,12 +294,18 @@ class BaseStorage(Storage):
         :param content:
         :return:
         """
-        dir_path, file_name = self.get_object_path(key, must_exist=False)
-        file_path = os.path.join(dir_path, file_name)
+        file_path = self.paths.get_object_path(
+            key, must_exist=False
+        )
 
-        os.makedirs(dir_path, exist_ok=True)
+        dir_path = file_path.parent
 
-        if os.path.exists(file_path):
+        try:
+            dir_path.mkdir()
+        except FileExistsError:
+            pass
+
+        if file_path.exists():
             logger.debug(
                 logger.Fore.LIGHTBLACK_EX +
                 "EXISTS" +
@@ -319,7 +313,7 @@ class BaseStorage(Storage):
                 "  {}".format(key)
             )
         else:
-            with open(file_path, 'wb') as f:
+            with open(str(file_path), 'wb') as f:
                 f.write(content)
 
             logger.debug(
