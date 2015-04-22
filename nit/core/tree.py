@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 """
 """
+from pathlib import Path
 from nit.core.diff import TreeDiff
 from nit.core.log import getLogger
 from nit.core.storage import Storable
@@ -18,7 +19,7 @@ class Tree(Storable):
         """
 
         def __init__(self, relative_file_path, key):
-            self.path = relative_file_path
+            self.path = Path(relative_file_path)
             self.key = key
             self.key_short = key[:6]
 
@@ -72,7 +73,7 @@ class Tree(Storable):
 
     @property
     def file_set(self):
-        return set([str(n.path) for n in self._nodeset])
+        return set([n.path for n in self._nodeset])
 
     @property
     def key_to_node(self):
@@ -83,7 +84,7 @@ class Tree(Storable):
     @property
     def file_to_node(self):
         return {
-            str(node.path): node for node in self._nodeset
+            node.path: node for node in self._nodeset
         }
 
     @property

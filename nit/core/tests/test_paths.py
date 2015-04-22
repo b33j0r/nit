@@ -23,7 +23,9 @@ class BasePathsTests(TestCase):
         self.project_dir = Path(self.project_dir_td.name)
         self.repo_dir = self.project_dir/self.repo_name
         self.repo_dir.mkdir()
+
         assert self.project_dir.exists()
+
         self.paths = BasePaths(self.project_dir)
         self.paths.objects.mkdir()
         self.paths.refs.mkdir()

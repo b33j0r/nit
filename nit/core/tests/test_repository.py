@@ -24,7 +24,7 @@ class TestNitRepository(NitTestCase):
         """
         """
         self.repo.create()
-        self.assertDirExists(self.repo.storage.repo_dir_path)
+        self.assertTrue(self.repo.storage.paths.repo.exists())
 
     def test_create_should_fail_if_repo_exists(self):
         """

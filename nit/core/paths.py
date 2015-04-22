@@ -261,3 +261,6 @@ class BasePaths(Paths):
         return list(
             self.iter_object_paths_matching(keyish)
         )
+
+    def get_ref_path(self, ref):
+        return self.refs/Path(ref)

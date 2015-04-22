@@ -111,48 +111,6 @@ class BaseStorage(Storage):
         self._serialization_cls = serialization_cls
 
     @property
-    def project_dir_path(self):
-        """
-        The absolute path of the project directory
-        """
-        return self.paths.project
-
-    @property
-    def repo_dir_name(self):
-        """
-        The name of the repository directory (e.g. '.nit' or '.git')
-        """
-        return self.paths.repo_name
-
-    @property
-    def repo_dir_path(self):
-        """
-        The absolute path of the repository directory (e.g. '~/project/.nit')
-        """
-        return self.paths.repo_str
-
-    @property
-    def object_dir_path(self):
-        """
-        The absolute path of the object directory within the repository
-        """
-        return self.paths.objects_str
-
-    @property
-    def refs_dir_path(self):
-        """
-        The absolute path of the object directory within the repository
-        """
-        return self.paths.refs_str
-
-    @property
-    def index_path(self):
-        """
-        The absolute path of the index within the repository
-        """
-        return self.paths.index_str
-
-    @property
     def exists(self):
         return self.paths.repo.exists()
 
@@ -168,10 +126,10 @@ class BaseStorage(Storage):
                 repository_name=self.__class__.__name__.replace(
                     "Storage", ""
                 ),
-                repository_path=self.repo_dir_path
+                repository_path=self.paths.repo
             )
         )
-        shutil.rmtree(self.repo_dir_path, ignore_errors=ignore_errors)
+        shutil.rmtree(self.paths.repo_str, ignore_errors=ignore_errors)
 
     def create(self, force=False):
         """
@@ -184,7 +142,7 @@ class BaseStorage(Storage):
         logger.info(("Initialized empty {repository_name} "
                      "repository in {repository_path}").format(
             repository_name=self.__class__.__name__.replace("Storage", ""),
-            repository_path=self.repo_dir_path
+            repository_path=self.paths.repo
         ))
 
     def _create_verify_repo_dir(self, force):
@@ -194,13 +152,13 @@ class BaseStorage(Storage):
             self.destroy()
         else:
             raise NitUserError(
-                "'{}' already exists!".format(self.repo_dir_path)
+                "'{}' already exists!".format(self.paths.repo)
             )
 
     def _create_dir_structure(self):
-        os.makedirs(self.repo_dir_path)
-        os.makedirs(self.refs_dir_path)
-        os.makedirs(self.object_dir_path, exist_ok=True)
+        self.paths.repo.mkdir()
+        self.paths.refs.mkdir()
+        self.paths.objects.mkdir()
 
     def put(self, obj):
         """
@@ -214,31 +172,28 @@ class BaseStorage(Storage):
         return self.get_object(treeish)
 
     def put_ref(self, ref, key):
-        ref_path = os.path.join(self.refs_dir_path, ref)
-        ref_dir_path = os.path.dirname(ref_path)
-        os.makedirs(ref_dir_path, exist_ok=True)
-        with open(ref_path, 'wb') as file:
+        ref_path = self.paths.get_ref_path(ref)
+        os.makedirs(str(ref_path.parent), exist_ok=True)
+        with open(str(ref_path), 'wb') as file:
             b = key.encode()
             file.write(b)
 
     def get_ref(self, ref):
-        ref_path = os.path.join(self.refs_dir_path, ref)
-        if not os.path.exists(ref_path):
+        ref_path = self.paths.get_ref_path(ref)
+        if not ref_path.exists():
             raise NitRefNotFoundError(ref_path)
-        with open(ref_path, 'rb') as file:
+        with open(str(ref_path), 'rb') as file:
             b = file.read()
-            # Not necessary, type hinting for the IDE
-            assert isinstance(b, bytes)
             return b.decode()
 
     def put_index(self, index):
-        with open(self.index_path, 'wb') as file:
+        with open(self.paths.index_str, 'wb') as file:
             s = self._serialization_cls(file)
             s.serialize(index)
 
     def get_index(self):
         try:
-            with open(self.index_path, 'rb') as f:
+            with open(self.paths.index_str, 'rb') as f:
                 s = self._serialization_cls(f)
                 return s.deserialize()
         except FileNotFoundError:
