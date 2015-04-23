@@ -65,6 +65,7 @@ class BasePaths(Paths):
                 )
 
         self._repo_name = repo_name
+        self._repo = None
 
     def __getattr__(self, name):
         """
@@ -130,9 +131,11 @@ class BasePaths(Paths):
         """
         :return (Path):
         """
-        return self.find_repo_dir(
-            self.current_working_dir, self.repo_name
-        )
+        if not self._repo:
+            self._repo = self.find_repo_dir(
+                self.current_working_dir, self.repo_name
+            )
+        return self._repo
 
     @property
     def project(self):

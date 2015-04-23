@@ -234,8 +234,6 @@ def setup(args, name):
     from nit.components.nit.repository import NitRepository
 
     cwd = Path(os.getcwd())
-    logger.trace("Working Directory: {}".format(cwd))
-
     nit_paths = BasePaths(cwd)
     nit_repo = NitRepository(nit_paths)
     repo = RepositoryProxy(nit_repo)
