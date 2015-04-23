@@ -4,6 +4,7 @@
 from functools import wraps
 import os
 from pathlib import Path
+from nit.core.commit import Commit
 
 from nit.core.log import getLogger
 from nit.core.blob import Blob
@@ -43,11 +44,13 @@ class NitRepository(Repository):
 
     def status(self):
         try:
-            head_key = self.storage.get_symbolic_ref("HEAD")
+            symbolic_ref = self.storage.get_symbolic_ref("HEAD")
+            head_key = self.storage.get_ref(symbolic_ref)
         except NitRefNotFoundError as exc:
             logger.info("Initial commit")
             return
-        head = self.storage.get_object(head_key)
+        head_commit = self.storage.get_object(head_key)
+        head = self.storage.get_object(head_commit.tree_key)
         index = self.storage.get_index()
         diff = head.diff(index)
         logger.info(str(diff))
@@ -99,8 +102,15 @@ class NitRepository(Repository):
         index = self.storage.get_index()
         if not index:
             raise NitUserError("Nothing to commit!")
-        key = self.storage.put_tree(index)
-        self.storage.put_ref("heads/master", key)
+        try:
+            branch_ref = self.storage.get_symbolic_ref("HEAD")
+            parent_key = self.storage.get_ref(branch_ref)
+        except:
+            parent_key = ""
+        tree_key = self.storage.put_tree(index)
+        commit_obj = Commit(parent_key, tree_key, "Message!")
+        commit_key = self.storage.put(commit_obj)
+        self.storage.put_ref("heads/master", commit_key)
         self.storage.put_symbolic_ref("HEAD", "heads/master")
 
     def diff(self):

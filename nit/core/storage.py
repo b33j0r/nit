@@ -168,58 +168,6 @@ class BaseStorage(Storage):
         """
         return obj.accept_put(self)
 
-    def get_treeish(self, treeish):
-        return self.get_object(treeish)
-
-    def put_symbolic_ref(self, name, ref):
-        ref_path = self.paths.repo/name
-        with open(str(ref_path), 'wb') as file:
-            b = ref.encode()
-            file.write(b)
-
-    def get_symbolic_ref(self, name):
-        ref_path = self.paths.repo/name
-        if not ref_path.exists():
-            raise NitRefNotFoundError(ref_path)
-        with open(str(ref_path), 'rb') as file:
-            b = file.read()
-            head_ref = b.decode()
-        return self.get_ref(head_ref)
-
-    def put_ref(self, ref, key):
-        ref_path = self.paths.get_ref_path(ref)
-        os.makedirs(str(ref_path.parent), exist_ok=True)
-        with open(str(ref_path), 'wb') as file:
-            b = key.encode()
-            file.write(b)
-
-    def get_ref(self, ref):
-        ref_path = self.paths.get_ref_path(ref)
-        if not ref_path.exists():
-            raise NitRefNotFoundError(ref_path)
-        with open(str(ref_path), 'rb') as file:
-            b = file.read()
-            return b.decode()
-
-    def put_index(self, index):
-        with open(self.paths.index_str, 'wb') as file:
-            s = self._serialization_cls(file)
-            s.serialize(index)
-
-    def get_index(self):
-        try:
-            with open(self.paths.index_str, 'rb') as f:
-                s = self._serialization_cls(f)
-                return s.deserialize()
-        except FileNotFoundError:
-            return None
-
-    def put_blob(self, blob):
-        return self.put_object(blob)
-
-    def put_tree(self, tree):
-        return self.put_object(tree)
-
     def put_object(self, obj):
         content = self._serialize_object_to_bytes(obj)
         key = self.get_object_key_for_content(content)
@@ -235,27 +183,6 @@ class BaseStorage(Storage):
         with open(file_path, 'rb') as f:
             s = self._serialization_cls(f)
             return s.deserialize()
-
-    def get_object_key_for_content(self, content):
-        """
-        :param content:
-        :return:
-        """
-        return hashlib.sha1(content).hexdigest()
-
-    def _serialize_object_to_bytes(self, obj):
-        """
-
-        :param obj:
-        :return:
-        """
-        with io.BytesIO() as memory_file:
-            s = self._serialization_cls(memory_file)
-            s.serialize(obj)
-
-            memory_file.seek(0)
-            content = memory_file.read()
-        return content
 
     def _write_object(self, key, content):
         """
@@ -292,3 +219,79 @@ class BaseStorage(Storage):
                 logger.Fore.RESET +
                 "   {}".format(key)
             )
+
+    def get_treeish(self, treeish):
+        return self.get_object(treeish)
+
+    def put_symbolic_ref(self, name, ref):
+        ref_path = self.paths.repo/name
+        with open(str(ref_path), 'wb') as file:
+            b = ref.encode()
+            file.write(b)
+
+    def get_symbolic_ref(self, name):
+        ref_path = self.paths.repo/name
+        if not ref_path.exists():
+            raise NitRefNotFoundError(ref_path)
+        with open(str(ref_path), 'rb') as file:
+            b = file.read()
+            symbolic_ref = b.decode()
+            return symbolic_ref
+
+    def put_ref(self, ref, key):
+        ref_path = self.paths.get_ref_path(ref)
+        os.makedirs(str(ref_path.parent), exist_ok=True)
+        with open(str(ref_path), 'wb') as file:
+            b = key.encode()
+            file.write(b)
+
+    def get_ref(self, ref):
+        ref_path = self.paths.get_ref_path(ref)
+        if not ref_path.exists():
+            raise NitRefNotFoundError(ref_path)
+        with open(str(ref_path), 'rb') as file:
+            b = file.read()
+            return b.decode()
+
+    def put_index(self, index):
+        with open(self.paths.index_str, 'wb') as file:
+            s = self._serialization_cls(file)
+            s.serialize(index)
+
+    def get_index(self):
+        try:
+            with open(self.paths.index_str, 'rb') as f:
+                s = self._serialization_cls(f)
+                return s.deserialize()
+        except FileNotFoundError:
+            return None
+
+    def put_blob(self, blob):
+        return self.put_object(blob)
+
+    def put_commit(self, commit):
+        return self.put_object(commit)
+
+    def put_tree(self, tree):
+        return self.put_object(tree)
+
+    def get_object_key_for_content(self, content):
+        """
+        :param content:
+        :return:
+        """
+        return hashlib.sha1(content).hexdigest()
+
+    def _serialize_object_to_bytes(self, obj):
+        """
+
+        :param obj:
+        :return:
+        """
+        with io.BytesIO() as memory_file:
+            s = self._serialization_cls(memory_file)
+            s.serialize(obj)
+
+            memory_file.seek(0)
+            content = memory_file.read()
+        return content

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export NIT_LOG_LEVEL=INFO
+export NIT_LOG_LEVEL=DEBUG
 
 rm a b
 

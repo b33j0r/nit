@@ -73,6 +73,12 @@ class BaseSerializer(Serializer):
     def deserialize_index(self, index_cls):
         raise NotImplementedError("deserialize_index")
 
+    def serialize_commit(self, commit):
+        raise NotImplementedError("serialize_commit")
+
+    def deserialize_commit(self, commit_cls):
+        raise NotImplementedError("deserialize_commit")
+
     def serialize_blob(self, blob):
         raise NotImplementedError("serialize_blob")
 

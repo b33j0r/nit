@@ -2,6 +2,7 @@
 """
 """
 from io import BytesIO
+from nit.core.commit import Commit
 from nit.core.index import Index
 
 from nit.core.log import getLogger
@@ -26,7 +27,8 @@ class NitSerializer(BaseSerializer):
     obj_type_mapping = {
         "blob": Blob,
         "tree": Tree,
-        "index": Index
+        "index": Index,
+        "commit": Commit
     }
 
     def __init__(self, stream):
@@ -108,6 +110,56 @@ class NitSerializer(BaseSerializer):
             memory_file.seek(0)
             content = memory_file.read()
         return content
+
+    def serialize_commit(self, commit):
+        print("serialize_commit")
+        with BytesIO() as memory_file:
+            memory_serializer = self.__class__(memory_file)
+
+            memory_serializer.write_string(
+                commit.parent_key + self.CHUNK_SEP_STR
+            )
+
+            memory_serializer.write_string(
+                commit.tree_key + self.CHUNK_SEP_STR
+            )
+
+            memory_serializer.write_string(
+                commit.message + self.CHUNK_SEP_STR
+            )
+
+            logger.trace(
+                ("Serialized Commit:\n"
+                 "    Parent:  {}\n"
+                 "    Tree:    {}\n\n"
+                 "{}").format(
+                    commit.parent_key,
+                    commit.tree_key,
+                    commit.message
+                )
+            )
+            print("memory_file.getvalue(): {}".format(memory_file.getvalue()))
+
+            content = memory_file.getvalue()
+
+        self.serialize_signature("commit", len(content))
+        self.write_bytes(content)
+
+    def deserialize_commit(self, commit_cls):
+        parent_key = self.read_bytes_until(
+            self.CHUNK_SEP_BYTE
+        ).decode()
+
+        tree_key = self.read_bytes_until(
+            self.CHUNK_SEP_BYTE
+        ).decode()
+
+        message = self.read_bytes_until(
+            self.CHUNK_SEP_BYTE
+        ).decode()
+
+        commit = commit_cls(parent_key, tree_key, message)
+        return commit
 
     def serialize_tree(self, tree):
         logger.trace("Serializing Tree")
