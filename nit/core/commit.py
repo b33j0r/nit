@@ -22,3 +22,15 @@ class Commit(Storable):
     @classmethod
     def accept_deserializer(cls, deserializer):
         return deserializer.deserialize_commit(cls)
+
+    def __str__(self):
+        return (
+            "Commit Object\n"
+            "Parent:  {}\n"
+            "  Tree:  {}\n"
+            "\n{}\n\n"
+        ).format(
+            self.parent_key or "none",
+            self.tree_key,
+            self.message
+        )

@@ -221,7 +221,7 @@ def run(args):
 
 
 def setup(args, name):
-    logger.debug(
+    logger.trace(
         (
             logger.Fore.LIGHTBLUE_EX +
             '+++ CALL "{} {}"' +
@@ -244,7 +244,7 @@ def setup(args, name):
 
 
 def cleanup(status_code):
-    logger.debug(
+    logger.trace(
         (
             logger.Fore.LIGHTBLUE_EX +
             "--- EXIT with status code {}" +

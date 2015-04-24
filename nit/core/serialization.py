@@ -38,6 +38,13 @@ class Serializable(metaclass=ABCMeta):
 class Serializer(metaclass=ABCMeta):
 
     """
+    Serializes objects to a stream.
+
+    Each instance of a Serializer only writes to one stream.
+    Implementations are responsible for determining how this
+    is done. This allows different file formats to be used
+    for the same basic hierarchy of primitives (Blob, Tree,
+    Commit, etc).
     """
 
     def __init__(self, stream):
@@ -56,6 +63,36 @@ class BaseSerializer(Serializer):
 
     """
     """
+
+    def write_bytes(self, b):
+        self.stream.write(b)
+
+    def read_bytes(self, n=None):
+        return self.stream.read(n)
+
+    def read_bytes_until(self, terminator=b"\0"):
+        byte_string = []
+
+        while True:
+            last_byte = self.stream.read(1)
+            if last_byte in [terminator, b""]:
+                break
+            byte_string.append(last_byte)
+
+        byte_string = b"".join(byte_string)
+
+        # bytes conversion is not necessary here, it's
+        # used to provide a type-hint for IDEs
+        return bytes(byte_string)
+
+    def write_string(self, s, encoding="utf-8"):
+        b = s.encode(encoding=encoding)
+        self.write_bytes(b)
+
+    def read_string(self, encoding="utf-8"):
+        b = self.read_bytes()
+        s = b.decode(encoding=encoding)
+        return s
 
     def serialize(self, serializable):
         serializable.accept_serializer(self)
@@ -90,33 +127,3 @@ class BaseSerializer(Serializer):
 
     def deserialize_tree(self, tree_cls):
         raise NotImplementedError("deserialize_tree")
-
-    def write_bytes(self, b):
-        self.stream.write(b)
-
-    def read_bytes(self, n=None):
-        return self.stream.read(n)
-
-    def read_bytes_until(self, terminator=b"\0"):
-        byte_string = []
-
-        while True:
-            last_byte = self.stream.read(1)
-            if last_byte in [terminator, b""]:
-                break
-            byte_string.append(last_byte)
-
-        byte_string = b"".join(byte_string)
-
-        # bytes conversion is not necessary here, it's
-        # used to provide a type-hint for IDEs
-        return bytes(byte_string)
-
-    def write_string(self, s, encoding="utf-8"):
-        b = s.encode(encoding=encoding)
-        self.write_bytes(b)
-
-    def read_string(self, encoding="utf-8"):
-        b = self.read_bytes()
-        s = b.decode(encoding=encoding)
-        return s

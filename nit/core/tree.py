@@ -10,36 +10,39 @@ from nit.core.storage import Storable
 logger = getLogger(__name__)
 
 
+class TreeNode:
+    """
+    """
+
+    def __init__(self, relative_file_path, key):
+        self.path = Path(relative_file_path)
+        self.key = key
+        self.key_short = key[:6]
+
+    def __str__(self):
+        return str(self.path) + " " + str(self.key)
+
+    def __repr__(self):
+        return "Node('{}')".format(self)
+
+    def __hash__(self):
+        return hash(str(self))
+
+    def __eq__(self, other):
+        return hash(self) == hash(other)
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __lt__(self, other):
+        return str(self.path) < str(other.path)
+
+
 class Tree(Storable):
     """
     """
 
-    class Node:
-        """
-        """
-
-        def __init__(self, relative_file_path, key):
-            self.path = Path(relative_file_path)
-            self.key = key
-            self.key_short = key[:6]
-
-        def __str__(self):
-            return str(self.path) + " " + str(self.key)
-
-        def __repr__(self):
-            return "Node('{}')".format(self)
-
-        def __hash__(self):
-            return hash(str(self))
-
-        def __eq__(self, other):
-            return hash(self) == hash(other)
-
-        def __ne__(self, other):
-            return not self.__eq__(other)
-
-        def __lt__(self, other):
-            return str(self.path) < str(other.path)
+    Node = TreeNode
 
     def __init__(self):
         self._nodeset = set()
@@ -47,10 +50,15 @@ class Tree(Storable):
         self._path_to_key = { }
 
     def __str__(self):
-        return "\n".join(
-            "{} {}".format(
-                n.key, n.path
-            ) for n in self.nodes
+        return (
+            "Tree Object\n"
+            "{}\n\n"
+        ).format(
+            "\n".join(
+                "    {} {}".format(
+                    n.key, n.path
+                ) for n in self.nodes
+            )
         )
 
     def accept_put(self, storage):

@@ -112,7 +112,8 @@ class NitSerializer(BaseSerializer):
         return content
 
     def serialize_commit(self, commit):
-        print("serialize_commit")
+        logger.trace("Serializing Commit")
+
         with BytesIO() as memory_file:
             memory_serializer = self.__class__(memory_file)
 
@@ -138,7 +139,6 @@ class NitSerializer(BaseSerializer):
                     commit.message
                 )
             )
-            print("memory_file.getvalue(): {}".format(memory_file.getvalue()))
 
             content = memory_file.getvalue()
 
@@ -146,6 +146,8 @@ class NitSerializer(BaseSerializer):
         self.write_bytes(content)
 
     def deserialize_commit(self, commit_cls):
+        logger.trace("Deserializing Commit")
+
         parent_key = self.read_bytes_until(
             self.CHUNK_SEP_BYTE
         ).decode()
