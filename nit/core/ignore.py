@@ -71,6 +71,57 @@ class RegexIgnorePredicate(RelativeIgnorePredicate):
         self.regex = re.compile(pattern)
 
     def _ignore_relative(self, relative_file_path):
-        return self.regex.match(
+        print("file_path: {}".format(relative_file_path))
+        print("regex:     {}".format(self.regex.pattern))
+        return self.regex.search(
             str(relative_file_path)
+        ) is not None
+
+
+class PathspecIgnorePredicate(RegexIgnorePredicate):
+
+    def __init__(self, pattern):
+        self.is_negated = False
+        self.is_rooted = False
+        self.is_parent = False
+        pattern = self._build_pattern(pattern)
+        super().__init__(pattern)
+
+    def _ignore(self, base_path, file_path):
+        ignore = super()._ignore(base_path, file_path)
+        return (not ignore) if self.is_negated else ignore
+
+    def _build_pattern(self, pattern):
+        pattern = pattern.strip()
+
+        if pattern.startswith("!"):
+            self.is_negated = True
+            pattern = pattern[1:]
+
+        if pattern.startswith("/"):
+            self.is_rooted = True
+            pattern = pattern[1:]
+
+        if pattern.endswith("/"):
+            self.is_parent = True
+            pattern = pattern[:-1]
+
+        pattern_segs = pattern.split('/')
+
+        pattern_segs = [
+            self._escape(p) for p in pattern_segs
+        ]
+
+        return (
+            ("^" if self.is_rooted else "") +
+            os.path.sep.join(pattern_segs) +
+            ("$" if not self.is_parent else "("+os.path.sep+".*|$)")
         )
+
+    @staticmethod
+    def _escape(pattern):
+        pattern = pattern.replace(".", r"\.")
+        pattern = pattern.replace("?", ".")
+        pattern = pattern.replace("**", ".+")
+        pattern = pattern.replace("*", ".*")
+        return pattern

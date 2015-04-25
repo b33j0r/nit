@@ -4,7 +4,7 @@
 from tempfile import TemporaryDirectory
 from unittest import TestCase
 from pathlib import Path
-from nit.core.ignore import RelativeIgnorePredicate, RegexIgnorePredicate
+from nit.core.ignore import RelativeIgnorePredicate, RegexIgnorePredicate, PathspecIgnorePredicate
 
 
 class RelativeIgnorePredicateTests(TestCase):
@@ -71,90 +71,207 @@ class RegexIgnorePredicateTests(TestCase):
         )
 
 
-# class IgnoreStrategyPurePathTests(TestCase):
-#
-#     """
-#     """
-#
-#     def setUp(self):
-#         project_dir = Path("/fake")
-#         self.paths = BasePaths(project_dir, verify=False)
-#         self.ignorer = BaseIgnoreStrategy(
-#             project_dir, [
-#                 "ignore_me",
-#                 "\\.pyc$"
-#             ]
-#         )
-#
-#     def test_ignore_repo(self):
-#         assert self.ignorer.ignore(self.paths.repo)
-#
-#     def test_ignore_file_in_repo(self):
-#         ignored_file = self.paths.repo/"include_me"
-#         assert self.ignorer.ignore(ignored_file)
-#
-#     def test_ignore_file_in_project(self):
-#         ignored_file = self.paths.project/"ignore_me"
-#         assert self.ignorer.ignore(ignored_file)
-#
-#     def test_ignore_file_outside_of_project(self):
-#         ignored_file = self.paths.project.parent/"include_me"
-#         assert self.ignorer.ignore(ignored_file)
-#
-#     def test_not_ignore_file_in_project(self):
-#         not_ignored_file = self.paths.project/"main.py"
-#         assert not self.ignorer.ignore(not_ignored_file)
-#
-#     def test_ignore_file_pattern_in_project(self):
-#         ignored_file = self.paths.project/"main.pyc"
-#         assert self.ignorer.ignore(ignored_file)
-#
-#
-# class IgnoreStrategyFilesystemTests(IgnoreStrategyPurePathTests):
-#
-#     """
-#     """
-#
-#     def setUp(self):
-#         self.temp_dir = TemporaryDirectory()
-#         self.project_dir = Path(self.temp_dir.name)
-#         self.paths = BasePaths(self.project_dir, verify=False)
-#         self.paths.repo.mkdir()
-#         self.ignorer = BaseIgnoreStrategy(
-#             self.paths.project, [
-#                 "ignore_me",
-#                 ".py[cod]"
-#             ]
-#         )
-#         self.ignored_files = {
-#             self.paths.repo/"ignore_me",
-#             self.paths.repo/"dont_include_me",
-#             self.paths.project/"ignore_me"
-#         }
-#         self.included_files = {
-#             self.paths.project/"include_me"
-#         }
-#         self.all_files = self.ignored_files.union(self.included_files)
-#         for f in self.all_files:
-#             f.touch()
-#
-#     def tearDown(self):
-#         self.temp_dir.cleanup()
-#
-#     def test_exists(self):
-#         assert self.paths.repo.exists()
-#         for f in self.all_files:
-#             assert f.exists()
-#
-#     def test_ignored_file(self):
-#         assert self.ignorer.ignore(
-#             self.paths.project/"ignore_me"
-#         )
-#
-#     def test_ignored_files(self):
-#         for f in self.ignored_files:
-#             assert self.ignorer.ignore(f)
-#
-#     def test_included_files(self):
-#         for f in self.included_files:
-#             assert not self.ignorer.ignore(f)
+class PathspecIgnorePredicateTests(TestCase):
+
+    def test_dot(self):
+        predicate = PathspecIgnorePredicate(
+            ".ignore"
+        )
+        assert predicate.ignore(
+            "/fake",
+            "/fake/.ignore"
+        )
+        assert not predicate.ignore(
+            "/fake",
+            "/fake/cignore"
+        )
+        assert not predicate.ignore(
+            "/fake",
+            "/fake/ignore"
+        )
+
+    def test_negate(self):
+        predicate = PathspecIgnorePredicate(
+            "!.ignore"
+        )
+        assert not predicate.ignore(
+            "/fake",
+            "/fake/.ignore"
+        )
+        assert predicate.ignore(
+            "/fake",
+            "/fake/cignore"
+        )
+        assert predicate.ignore(
+            "/fake",
+            "/fake/ignore"
+        )
+
+    def test_leading_slash(self):
+        predicate = PathspecIgnorePredicate(
+            "/ignore"
+        )
+        assert predicate.ignore(
+            "/fake",
+            "/fake/ignore"
+        )
+        assert not predicate.ignore(
+            "/fake",
+            "/fake/subdir/ignore"
+        )
+
+    def test_no_leading_slash(self):
+        predicate = PathspecIgnorePredicate(
+            "ignore"
+        )
+        assert predicate.ignore(
+            "/fake",
+            "/fake/ignore"
+        )
+        assert predicate.ignore(
+            "/fake",
+            "/fake/subdir/ignore"
+        )
+        assert not predicate.ignore(
+            "/fake",
+            "/fake/include"
+        )
+        assert not predicate.ignore(
+            "/fake",
+            "/fake/subdir/include"
+        )
+
+    def test_single_wildcard(self):
+        predicate = PathspecIgnorePredicate(
+            "ignore?"
+        )
+        assert predicate.ignore(
+            "/fake",
+            "/fake/ignored"
+        )
+        assert predicate.ignore(
+            "/fake",
+            "/fake/subdir/ignored"
+        )
+        assert not predicate.ignore(
+            "/fake",
+            "/fake/ignore"
+        )
+        assert not predicate.ignore(
+            "/fake",
+            "/fake/subdir/ignore"
+        )
+
+    def test_multi_wildcard(self):
+        predicate = PathspecIgnorePredicate(
+            "ignore*"
+        )
+        assert predicate.ignore(
+            "/fake",
+            "/fake/ignore"
+        )
+        assert predicate.ignore(
+            "/fake",
+            "/fake/subdir/ignore"
+        )
+        assert predicate.ignore(
+            "/fake",
+            "/fake/ignored"
+        )
+        assert predicate.ignore(
+            "/fake",
+            "/fake/subdir/ignored"
+        )
+        assert not predicate.ignore(
+            "/fake",
+            "/fake/ignor"
+        )
+        assert not predicate.ignore(
+            "/fake",
+            "/fake/subdir/ignor"
+        )
+
+    def test_leading_double_wildcard(self):
+        predicate = PathspecIgnorePredicate(
+            "**/ignore"
+        )
+        assert not predicate.ignore(
+            "/fake",
+            "/fake/ignore"
+        )
+        assert predicate.ignore(
+            "/fake",
+            "/fake/subdir/ignore"
+        )
+        assert predicate.ignore(
+            "/fake",
+            "/fake/subdir/subsubdir/ignore"
+        )
+
+    def test_double_wildcard(self):
+        predicate = PathspecIgnorePredicate(
+            "subdir/**/ignore"
+        )
+        assert not predicate.ignore(
+            "/fake",
+            "/fake/foo/ignore"
+        )
+        assert not predicate.ignore(
+            "/fake",
+            "/fake/subdir/ignore"
+        )
+        assert predicate.ignore(
+            "/fake",
+            "/fake/foo/subdir/subsubdir/ignore"
+        )
+
+    def test_char_class(self):
+        predicate = PathspecIgnorePredicate(
+            "[ab]/ignore"
+        )
+        assert predicate.ignore(
+            "/fake",
+            "/fake/a/ignore"
+        )
+        assert not predicate.ignore(
+            "/fake",
+            "/fake/c/ignore"
+        )
+        assert predicate.ignore(
+            "/fake",
+            "/fake/c/b/ignore"
+        )
+
+    def test_negated_char_class(self):
+        predicate = PathspecIgnorePredicate(
+            "![ab]/ignore"
+        )
+        assert not predicate.ignore(
+            "/fake",
+            "/fake/a/ignore"
+        )
+        assert predicate.ignore(
+            "/fake",
+            "/fake/c/ignore"
+        )
+        assert not predicate.ignore(
+            "/fake",
+            "/fake/c/b/ignore"
+        )
+
+    def test_trailing_slash(self):
+        predicate = PathspecIgnorePredicate(
+            "subdir/"
+        )
+        assert predicate.ignore(
+            "/fake",
+            "/fake/subdir/"
+        )
+        assert predicate.ignore(
+            "/fake",
+            "/fake/subdir/a"
+        )
+        assert not predicate.ignore(
+            "/fake",
+            "/fake/subdira"
+        )
