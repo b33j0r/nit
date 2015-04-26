@@ -21,14 +21,35 @@ class IgnorePredicate(metaclass=ABCMeta):
         """
         base_path = Path(base_path)
         file_path = Path(file_path)
-        return self._ignore(base_path, file_path)
+        return self.ignore_path(base_path, file_path)
 
     @abstractmethod
-    def _ignore(self, base_path, file_path):
+    def ignore_path(self, base_path, file_path):
         """
         Returns True if `file_path` should be ignored.
         """
         pass
+
+
+class CompoundIgnorePredicate(IgnorePredicate):
+
+    """
+    Wraps a list of IgnorePredicate instances
+    and tests all of them when ignore() is
+    called.
+    """
+
+    def __init__(self, predicates=None):
+        self.predicates = list(predicates) or []
+
+    def ignore_path(self, base_path, file_path):
+        """
+        """
+        return any(
+            p.ignore_path(base_path, file_path)
+            for p in self.predicates
+        )
+
 
 class RelativeIgnorePredicate(IgnorePredicate):
 
@@ -38,7 +59,7 @@ class RelativeIgnorePredicate(IgnorePredicate):
     the base project directory.
     """
 
-    def _ignore(self, base_path, file_path):
+    def ignore_path(self, base_path, file_path):
         """
         Returns True if `file_path` should be ignored.
         """
@@ -51,12 +72,12 @@ class RelativeIgnorePredicate(IgnorePredicate):
         except ValueError:
             return True
 
-        return self._ignore_relative(
+        return self.ignore_relative_path(
             relative_file_path
         )
 
     @abstractmethod
-    def _ignore_relative(self, relative_file_path):
+    def ignore_relative_path(self, relative_file_path):
         pass
 
 
@@ -70,9 +91,7 @@ class RegexIgnorePredicate(RelativeIgnorePredicate):
     def __init__(self, pattern):
         self.regex = re.compile(pattern)
 
-    def _ignore_relative(self, relative_file_path):
-        print("file_path: {}".format(relative_file_path))
-        print("regex:     {}".format(self.regex.pattern))
+    def ignore_relative_path(self, relative_file_path):
         return self.regex.search(
             str(relative_file_path)
         ) is not None
@@ -84,11 +103,12 @@ class PathspecIgnorePredicate(RegexIgnorePredicate):
         self.is_negated = False
         self.is_rooted = False
         self.is_parent = False
+        pattern = str(pattern)
         pattern = self._build_pattern(pattern)
         super().__init__(pattern)
 
-    def _ignore(self, base_path, file_path):
-        ignore = super()._ignore(base_path, file_path)
+    def ignore_path(self, base_path, file_path):
+        ignore = super().ignore_path(base_path, file_path)
         return (not ignore) if self.is_negated else ignore
 
     def _build_pattern(self, pattern):
@@ -106,7 +126,7 @@ class PathspecIgnorePredicate(RegexIgnorePredicate):
             self.is_parent = True
             pattern = pattern[:-1]
 
-        pattern_segs = pattern.split('/')
+        pattern_segs = pattern.split("/")
 
         pattern_segs = [
             self._escape(p) for p in pattern_segs
@@ -115,7 +135,10 @@ class PathspecIgnorePredicate(RegexIgnorePredicate):
         return (
             ("^" if self.is_rooted else "") +
             os.path.sep.join(pattern_segs) +
-            ("$" if not self.is_parent else "("+os.path.sep+".*|$)")
+            (
+                "$" if not self.is_parent else
+                "(" + os.path.sep + ".*|$)"
+            )
         )
 
     @staticmethod
@@ -125,3 +148,9 @@ class PathspecIgnorePredicate(RegexIgnorePredicate):
         pattern = pattern.replace("**", ".+")
         pattern = pattern.replace("*", ".*")
         return pattern
+
+
+class DirPathspecIgnorePredicate(PathspecIgnorePredicate):
+
+    """
+    """

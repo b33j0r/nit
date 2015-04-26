@@ -127,6 +127,13 @@ class BasePaths(Paths):
         return "HEAD"
 
     @property
+    def ignore_name(self):
+        """
+        e.g. ".gitignore", ".nitignore"
+        """
+        return self.repo_name + "ignore"
+
+    @property
     def repo(self):
         """
         :return (Path):
@@ -171,6 +178,13 @@ class BasePaths(Paths):
         :return (Path):
         """
         return self.repo/self.head_name
+
+    @property
+    def ignore(self):
+        """
+        :return (Path):
+        """
+        return self.project/self.ignore_name
 
     @classmethod
     def find_repo_dir(cls, cwd, repo_name):

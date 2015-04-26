@@ -4,6 +4,7 @@
 from functools import wraps
 import os
 from pathlib import Path
+from nit.components.nit.ignore import NitIgnoreStrategy
 from nit.core.commit import Commit
 
 from nit.core.log import getLogger
@@ -25,11 +26,15 @@ class NitRepository(Repository):
         self,
         paths,
         storage_cls=NitStorage,
-        serialization_cls=NitSerializer
+        serialization_cls=NitSerializer,
+        ignore_cls = NitIgnoreStrategy
     ):
         self.storage = storage_cls(
             paths,
             serialization_cls=serialization_cls
+        )
+        self.ignore = ignore_cls(
+            paths
         )
 
     @property
@@ -55,7 +60,7 @@ class NitRepository(Repository):
         diff = head.diff(index)
         logger.info(str(diff))
 
-    def add(self, *relative_file_paths):
+    def add(self, *relative_file_paths, force=False):
         blobs = []
 
         index = self.storage.get_index()
@@ -76,6 +81,16 @@ class NitRepository(Repository):
                         file_path
                     )
                 )
+            if self.ignore.ignore(file_path):
+                logger.warn(
+                    (
+                        "The file '{}' is ignored "
+                        "(use --force to override)"
+                    ).format(
+                        file_path
+                    )
+                )
+                continue
             with open(str(file_path), 'rb') as file:
                 contents = file.read()
                 blob = Blob(contents)
