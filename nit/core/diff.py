@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 """
 """
+from abc import ABCMeta, abstractproperty
 
 from nit.core.log import getLogger
 
@@ -84,6 +85,219 @@ class TreeDiffFormatter:
 
         return s
 
+
+class TreeDiff(metaclass=ABCMeta):
+
+    """
+    """
+
+    @abstractproperty
+    def added(self):
+        """
+        Nodes with file paths in index, but not head
+
+        :return (set):
+        """
+        pass
+
+    @abstractproperty
+    def removed(self):
+        """
+        Nodes with file paths in head, but not index
+
+        :return (set):
+        """
+        pass
+
+    @abstractproperty
+    def modified(self):
+        """
+        Nodes sharing file paths in head and index
+        but with differing key values
+
+        :return (set):
+        """
+        pass
+
+    @abstractproperty
+    def unmodified(self):
+        """
+        Nodes perfectly matching in head and index
+
+        :return (set):
+        """
+        pass
+
+    @abstractproperty
+    def untracked(self):
+        """
+        Nodes with paths in stage but not in index
+
+        :return (set):
+        """
+        pass
+
+    @abstractproperty
+    def ignored(self):
+        """
+        Nodes in stage but not index with ignore=True
+
+        :return (set):
+        """
+        pass
+
+
+class BaseTreeDiff(TreeDiff):
+
+    def __init__(
+            self,
+            head_nodes,
+            index_nodes,
+            stage_nodes=None
+    ):
+        self.head_nodes = set(head_nodes)
+        self.index_nodes = set(index_nodes)
+        self.stage_nodes = set(stage_nodes or [])
+
+        # Associate paths with nodes
+        self.head_paths = {
+            n.path: n for n in self.head_nodes
+        }
+        self.index_paths = {
+            n.path: n for n in self.index_nodes
+        }
+        self.stage_paths = {
+            n.path: n for n in self.stage_nodes
+        }
+
+        # Associate keys with nodes
+        self.head_keys = {
+            n.key: n for n in self.head_nodes
+        }
+        self.index_keys = {
+            n.key: n for n in self.index_nodes
+        }
+        self.stage_keys = {
+            n.key: n for n in self.stage_nodes
+        }
+
+    @property
+    def added(self):
+        """
+        Nodes with file paths in index, but not head
+
+        :return (set):
+        """
+        index_path_set = set(self.index_paths)
+        head_path_set = set(self.head_paths)
+
+        return {
+            self.index_paths[k]
+            for k in index_path_set - head_path_set
+        }
+
+    @property
+    def removed(self):
+        """
+        Nodes with file paths in head, but not index
+
+        :return (set):
+        """
+        index_path_set = set(self.index_paths)
+        head_path_set = set(self.head_paths)
+
+        return {
+            self.head_paths[k]
+            for k in head_path_set - index_path_set
+        }
+
+    @property
+    def modified(self):
+        """
+        Nodes sharing file paths in head and index
+        but with differing key values
+
+        :return (set):
+        """
+        index_path_set = set(self.index_paths)
+        head_path_set = set(self.head_paths)
+
+        both_paths_set = index_path_set.intersection(
+            head_path_set
+        )
+
+        return {
+            self.index_paths[k]
+            for k in both_paths_set
+            if (
+                self.head_paths[k].key
+                != self.index_paths[k].key
+            )
+        }
+
+    @property
+    def unmodified(self):
+        """
+        Nodes perfectly matching in head and index
+
+        :return (set):
+        """
+        index_path_set = set(self.index_paths)
+        head_path_set = set(self.head_paths)
+
+        both_paths_set = index_path_set.intersection(
+            head_path_set
+        )
+
+        return {
+            self.index_paths[k]
+            for k in both_paths_set
+            if (
+                self.head_paths[k].key
+                == self.index_paths[k].key
+            )
+        }
+
+    @property
+    def untracked_or_ignored(self):
+        """
+        Nodes with paths in stage but not in index
+
+        :return (set):
+        """
+        index_path_set = set(self.index_paths)
+        stage_path_set = set(self.stage_paths)
+
+        stage_not_index = stage_path_set - index_path_set
+
+        return {
+            self.stage_paths[k]
+            for k in stage_not_index
+        }
+
+    @property
+    def untracked(self):
+        """
+        Nodes with paths in stage but not in index
+
+        :return (set):
+        """
+        return {
+            n for n in self.untracked_or_ignored if not n.ignore
+        }
+
+    @property
+    def ignored(self):
+        """
+        Nodes in stage but not index with ignore=True
+
+        :return (set):
+        """
+        return {
+            n for n in self.untracked_or_ignored if n.ignore
+        }
+
+
 class TreeDiff:
 
     """
@@ -97,10 +311,22 @@ class TreeDiff:
         self.formatter = TreeDiffFormatter()
 
         (
-            self.added_nodes,
-            self.modified_nodes,
-            self.removed_nodes
+            self._added_nodes,
+            self._modified_nodes,
+            self._removed_nodes
         ) = self._diff()
+
+    @property
+    def added_nodes(self):
+        return self._added_nodes
+
+    @property
+    def modified_nodes(self):
+        return self._modified_nodes
+
+    @property
+    def removed_nodes(self):
+        return self._removed_nodes
 
     def _diff(self):
         a_key_to_node = self.tree_from.key_to_node

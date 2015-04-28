@@ -1,19 +1,17 @@
 #! /usr/bin/env python
 """
 """
-from functools import wraps
-import os
 from pathlib import Path
-from nit.components.nit.ignore import NitIgnoreStrategy
-from nit.core.commit import Commit
 
 from nit.core.log import getLogger
-from nit.core.blob import Blob
-from nit.components.nit.storage import NitStorage
-from nit.components.nit.serialization import NitSerializer
 from nit.core.errors import NitUserError, NitRefNotFoundError
 from nit.core.repository import Repository
+from nit.core.commit import Commit
+from nit.core.blob import Blob
 from nit.core.tree import Tree
+from nit.components.nit.ignore import NitIgnoreStrategy
+from nit.components.nit.storage import NitStorage
+from nit.components.nit.serialization import NitSerializer
 
 
 logger = getLogger(__name__)
@@ -81,7 +79,7 @@ class NitRepository(Repository):
                         file_path
                     )
                 )
-            if self.ignore.ignore(file_path):
+            if not force and self.ignore.ignore(file_path):
                 logger.warn(
                     (
                         "The file '{}' is ignored "
@@ -98,7 +96,9 @@ class NitRepository(Repository):
                 relative_file_path = file_path.relative_to(
                     self.storage.paths.project
                 )
-                blobs.append((key, relative_file_path, blob))
+                blobs.append(
+                    (key, relative_file_path, blob)
+                )
                 node = Tree.Node(
                     relative_file_path,
                     key

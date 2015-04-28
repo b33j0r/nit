@@ -51,23 +51,32 @@ class RepositoryProxy:
     def __init__(self, repo):
         self.repo = repo
 
-    @map_args(kwarg_mappings=["force"])
+    @map_args(
+        kwarg_mappings=["force"]
+    )
     def init(self, force=None):
         self.repo.create(force=force)
 
-    @map_args(kwarg_mappings=[])
+    @map_args(
+        kwarg_mappings=[]
+    )
     def status(self):
         self.repo.status()
 
-    @map_args(arg_mappings=["files"])
-    def add(self, files):
-        self.repo.add(*files)
+    @map_args(
+        arg_mappings=["files"],
+        kwarg_mappings=["force"]
+    )
+    def add(self, files, force=None):
+        self.repo.add(*files, force=force)
 
     @map_args()
     def diff(self):
         self.repo.diff()
 
-    @map_args(arg_mappings=["key"])
+    @map_args(
+        arg_mappings=["key"]
+    )
     def cat(self, key):
         s = self.repo.cat(key)
         # the logger already adds a newline
@@ -75,7 +84,9 @@ class RepositoryProxy:
             s = s[:-1]
         logger.info(s)
 
-    @map_args(arg_mappings=[])
+    @map_args(
+        arg_mappings=[]
+    )
     def commit(self, **kwargs):
         self.repo.commit(**kwargs)
 
@@ -151,6 +162,10 @@ class BaseParserFactory(ParserFactory):
         parser_add = subparsers.add_parser("add")
         parser_add.set_defaults(
             func=repository.add
+        )
+        parser_add.add_argument(
+            '--force',
+            action='store_true'
         )
         parser_add.add_argument("files", nargs="+")
 

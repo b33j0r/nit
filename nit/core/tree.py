@@ -14,16 +14,18 @@ class TreeNode:
     """
     """
 
-    def __init__(self, relative_file_path, key):
+    def __init__(self, relative_file_path, key, ignored=False):
         self.path = Path(relative_file_path)
         self.key = key
-        self.key_short = key[:6]
+        self.ignored = ignored
 
     def __str__(self):
-        return str(self.path) + " " + str(self.key)
+        return "{} {} (ignored={})".format(
+            self.path, self.key, self.ignored
+        )
 
     def __repr__(self):
-        return "Node('{}')".format(self)
+        return "TreeNode('{}')".format(self)
 
     def __hash__(self):
         return hash(str(self))

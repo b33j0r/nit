@@ -16,12 +16,10 @@ class NitStorage(BaseStorage):
     def __init__(
             self,
             paths_strategy,
-            serialization_cls=NitSerializer,
-            repo_dir_name=".nit"
+            serialization_cls=NitSerializer
     ):
         super().__init__(
             paths_strategy,
-            serialization_cls,
-            repo_dir_name
+            serialization_cls
         )
 

@@ -14,9 +14,13 @@ class NitIgnoreStrategy:
 
     def __init__(self, paths):
         self.base_path = paths.project
+
         try:
-            with paths.ignore.open('r', encoding='utf-8') as f:
+            with paths.ignore.open(
+                'r', encoding='utf-8'
+            ) as f:
                 lines = f.readlines()
+
             predicates = []
             for line in lines:
                 line = line.strip()
@@ -24,6 +28,7 @@ class NitIgnoreStrategy:
                     continue
                 predicate = PathspecIgnorePredicate(line)
                 predicates.append(predicate)
+
         except FileNotFoundError:
             predicates = []
 

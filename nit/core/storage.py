@@ -104,8 +104,7 @@ class BaseStorage(Storage):
     def __init__(
         self,
         paths_strategy,
-        serialization_cls=BaseSerializer,
-        repo_dir_name=".nit"
+        serialization_cls=BaseSerializer
     ):
         self.paths = paths_strategy
         self._serialization_cls = serialization_cls
@@ -123,13 +122,17 @@ class BaseStorage(Storage):
         logger.debug(
             ("Destroying {repository_name} "
              "repository in {repository_path}").format(
-                repository_name=self.__class__.__name__.replace(
+                repository_name=
+                self.__class__.__name__.replace(
                     "Storage", ""
                 ),
                 repository_path=self.paths.repo
             )
         )
-        shutil.rmtree(self.paths.repo_str, ignore_errors=ignore_errors)
+        shutil.rmtree(
+            self.paths.repo_str,
+            ignore_errors=ignore_errors
+        )
 
     def create(self, force=False):
         """
@@ -139,11 +142,17 @@ class BaseStorage(Storage):
         """
         self._create_verify_repo_dir(force)
         self._create_dir_structure()
-        logger.info(("Initialized empty {repository_name} "
-                     "repository in {repository_path}").format(
-            repository_name=self.__class__.__name__.replace("Storage", ""),
-            repository_path=self.paths.repo
-        ))
+        logger.info(
+            (
+                "Initialized empty {repository_name} "
+                "repository in {repository_path}"
+            ).format(
+                repository_name=self.__class__.__name__.replace(
+                    "Storage", ""
+                ),
+                repository_path=self.paths.repo
+            )
+        )
 
     def _create_verify_repo_dir(self, force):
         if not self.exists:
@@ -152,7 +161,9 @@ class BaseStorage(Storage):
             self.destroy()
         else:
             raise NitUserError(
-                "'{}' already exists!".format(self.paths.repo)
+                "'{}' already exists!".format(
+                    self.paths.repo
+                )
             )
 
     def _create_dir_structure(self):
@@ -209,6 +220,7 @@ class BaseStorage(Storage):
                 logger.Fore.RESET +
                 "  {}".format(key)
             )
+
         else:
             with open(str(file_path), 'wb') as f:
                 f.write(content)
@@ -291,7 +303,4 @@ class BaseStorage(Storage):
         with io.BytesIO() as memory_file:
             s = self._serialization_cls(memory_file)
             s.serialize(obj)
-
-            memory_file.seek(0)
-            content = memory_file.read()
-        return content
+            return memory_file.getvalue()
