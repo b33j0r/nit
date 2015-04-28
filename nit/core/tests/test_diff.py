@@ -69,6 +69,49 @@ class BaseTreeDiffTests(TestCase):
         assert {f1} == self.diff.ignored
 
 
+class BaseTreeDiffTestsNoHead(TestCase):
+
+    """
+    """
+
+    def setUp(self):
+        head_nodes = None
+        index_nodes = [
+            a1, b1, d1
+        ]
+        stage_nodes = [
+            a1, b2, c1
+        ]
+
+        self.diff = BaseTreeDiff(
+            head_nodes,
+            index_nodes,
+            stage_nodes
+        )
+
+    def test_unmodified(self):
+        assert set() == self.diff.unmodified
+
+    def test_modified(self):
+        assert set() == self.diff.modified
+
+    def test_removed(self):
+        assert set() == self.diff.removed
+
+    def test_added(self):
+        assert {a1, b1, d1} == self.diff.added
+
+    def test_unstaged(self):
+        assert {b2} == self.diff.unstaged
+
+    def test_untracked(self):
+        assert {c1} == self.diff.untracked
+
+    def test_ignored(self):
+        assert set() == self.diff.ignored
+
+
+
 class BaseTreeDiffTestsNoStage(TestCase):
 
     """

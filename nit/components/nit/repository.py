@@ -2,13 +2,14 @@
 """
 """
 from pathlib import Path
+from nit.core.diff import TreeDiffFormatter
 
 from nit.core.log import getLogger
 from nit.core.errors import NitUserError, NitRefNotFoundError
 from nit.core.repository import Repository
 from nit.core.commit import Commit
 from nit.core.blob import Blob
-from nit.core.tree import Tree
+from nit.core.tree import Tree, TreeNode
 from nit.components.nit.ignore import NitIgnoreStrategy
 from nit.components.nit.storage import NitStorage
 from nit.components.nit.serialization import NitSerializer
@@ -49,14 +50,23 @@ class NitRepository(Repository):
         try:
             symbolic_ref = self.storage.get_symbolic_ref("HEAD")
             head_key = self.storage.get_ref(symbolic_ref)
+            head_commit = self.storage.get_object(head_key)
+            head = self.storage.get_object(head_commit.tree_key)
         except NitRefNotFoundError as exc:
             logger.info("Initial commit")
-            return
-        head_commit = self.storage.get_object(head_key)
-        head = self.storage.get_object(head_commit.tree_key)
+            # return
+            head = Tree()
         index = self.storage.get_index()
-        diff = head.diff(index)
-        logger.info(str(diff))
+        stage = Tree()
+        stage.add_node(TreeNode(
+            "ignored", "ddddf", True
+        ))
+        stage.add_node(TreeNode(
+            "included", "ddddf", False
+        ))
+        diff = head.diff(index, stage)
+        fmt = TreeDiffFormatter()
+        logger.info(fmt.format(diff))
 
     def add(self, *relative_file_paths, force=False):
         blobs = []

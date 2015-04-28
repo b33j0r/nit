@@ -2,7 +2,7 @@
 """
 """
 from pathlib import Path
-from nit.core.diff import TreeDiff
+from nit.core.diff import TreeDiff, BaseTreeDiff
 from nit.core.log import getLogger
 from nit.core.storage import Storable
 
@@ -14,14 +14,14 @@ class TreeNode:
     """
     """
 
-    def __init__(self, relative_file_path, key, ignored=False):
+    def __init__(self, relative_file_path, key, ignore=False):
         self.path = Path(relative_file_path)
         self.key = key
-        self.ignored = ignored
+        self.ignore = ignore
 
     def __str__(self):
-        return "{} {} (ignored={})".format(
-            self.path, self.key, self.ignored
+        return "{} {} (ignore={})".format(
+            self.path, self.key, self.ignore
         )
 
     def __repr__(self):
@@ -47,9 +47,7 @@ class Tree(Storable):
     Node = TreeNode
 
     def __init__(self):
-        self._nodeset = set()
-        self._key_to_path = { }
-        self._path_to_key = { }
+        self._nodes = set()
 
     def __str__(self):
         return (
@@ -74,51 +72,23 @@ class Tree(Storable):
         return deserializer.deserialize_tree(cls)
 
     @property
-    def node_set(self):
-        return self._nodeset
-
-    @property
-    def key_set(self):
-        return set([n.key for n in self._nodeset])
-
-    @property
-    def file_set(self):
-        return set([n.path for n in self._nodeset])
-
-    @property
-    def key_to_node(self):
-        return {
-            node.key: node for node in self._nodeset
-        }
-
-    @property
-    def file_to_node(self):
-        return {
-            node.path: node for node in self._nodeset
-        }
-
-    @property
     def nodes(self):
         return sorted(
-            self._nodeset,
+            iter(self),
             key=lambda node: str(node.path)
         )
 
+    def __iter__(self):
+        return iter(self._nodes)
+
     def add_node(self, tree_node):
-        if tree_node in self._nodeset:
+        if tree_node in self._nodes:
             return False
-        existing_node = self.file_to_node.get(tree_node.path)
-        if existing_node:
-            self.remove_node(existing_node)
-        self._nodeset.add(tree_node)
-        self._key_to_path[tree_node.key] = tree_node.path
-        self._path_to_key[tree_node.path] = tree_node.key
+        self._nodes.add(tree_node)
         return True
 
     def remove_node(self, tree_node):
-        self._nodeset.remove(tree_node)
-        del self._key_to_path[tree_node.key]
-        del self._path_to_key[tree_node.path]
+        self._nodes.remove(tree_node)
 
-    def diff(self, other):
-        return TreeDiff(self, other)
+    def diff(self, other, stage=None):
+        return BaseTreeDiff.from_trees(self, other, stage)

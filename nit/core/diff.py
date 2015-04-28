@@ -60,21 +60,36 @@ class TreeDiffFormatter:
 
 
     def format(self, diff):
-        s = "{}{}{}".format(
+        s = "{}{}{}{}{}{}".format(
             self.format_nodes(
-                diff.added_nodes,
+                diff.added,
                 "Added",
                 logger.Fore.GREEN
             ),
             self.format_nodes(
-                diff.modified_nodes,
+                diff.removed,
+                "Removed",
+                logger.Fore.RED
+            ),
+            self.format_nodes(
+                diff.modified,
                 "Modified",
                 logger.Fore.YELLOW
             ),
             self.format_nodes(
-                diff.removed_nodes,
-                "Removed",
-                logger.Fore.RED
+                diff.unstaged,
+                "Unstaged",
+                logger.Fore.LIGHTCYAN_EX
+            ),
+            self.format_nodes(
+                diff.untracked,
+                "Untracked",
+                logger.Fore.LIGHTCYAN_EX
+            ),
+            self.format_nodes(
+                diff.ignored,
+                "Ignored",
+                logger.Fore.LIGHTBLACK_EX
             )
         )
         if s.endswith("\n\n"):
@@ -129,6 +144,16 @@ class TreeDiff(metaclass=ABCMeta):
         pass
 
     @abstractproperty
+    def unstaged(self):
+        """
+        Nodes sharing file paths in stage and index
+        but with differing key values
+
+        :return (set):
+        """
+        pass
+
+    @abstractproperty
     def untracked(self):
         """
         Nodes with paths in stage but not in index
@@ -155,8 +180,8 @@ class BaseTreeDiff(TreeDiff):
             index_nodes,
             stage_nodes=None
     ):
-        self.head_nodes = set(head_nodes)
-        self.index_nodes = set(index_nodes)
+        self.head_nodes = set(head_nodes or [])
+        self.index_nodes = set(index_nodes or [])
         self.stage_nodes = set(stage_nodes or [])
 
         # Associate paths with nodes
@@ -259,6 +284,30 @@ class BaseTreeDiff(TreeDiff):
         }
 
     @property
+    def unstaged(self):
+        """
+        Nodes sharing file paths in stage and index
+        but with differing key values
+
+        :return (set):
+        """
+        stage_path_set = set(self.stage_paths)
+        index_path_set = set(self.index_paths)
+
+        both_paths_set = index_path_set.intersection(
+            stage_path_set
+        )
+
+        return {
+            self.stage_paths[k]
+            for k in both_paths_set
+            if (
+                self.stage_paths[k].key
+                != self.index_paths[k].key
+            )
+        }
+
+    @property
     def untracked_or_ignored(self):
         """
         Nodes with paths in stage but not in index
@@ -297,73 +346,8 @@ class BaseTreeDiff(TreeDiff):
             n for n in self.untracked_or_ignored if n.ignore
         }
 
-
-class TreeDiff:
-
-    """
-    """
-
-    def __init__(self, tree_from, tree_to):
-        logger.trace("Creating TreeDiff")
-        self.tree_from = tree_from
-        self.tree_to = tree_to
-
-        self.formatter = TreeDiffFormatter()
-
-        (
-            self._added_nodes,
-            self._modified_nodes,
-            self._removed_nodes
-        ) = self._diff()
-
-    @property
-    def added_nodes(self):
-        return self._added_nodes
-
-    @property
-    def modified_nodes(self):
-        return self._modified_nodes
-
-    @property
-    def removed_nodes(self):
-        return self._removed_nodes
-
-    def _diff(self):
-        a_key_to_node = self.tree_from.key_to_node
-        b_key_to_node = self.tree_to.key_to_node
-
-        a_file_to_node = self.tree_from.file_to_node
-        b_file_to_node = self.tree_to.file_to_node
-
-        changes = self.tree_to.node_set ^ self.tree_from.node_set
-
-        added_files = self.tree_to.file_set - self.tree_from.file_set
-        removed_files = self.tree_from.file_set - self.tree_to.file_set
-
-        modified_files = set([
-            a_key_to_node.get(n.key, b_key_to_node.get(n.key)).path
-            for n in changes
-            if (
-                n.path not in added_files and
-                n.path not in removed_files
-            )
-        ])
-
-        modified_nodes = sorted(set([
-            self.tree_to.file_to_node[path] for path in modified_files
-        ]))
-
-        added_nodes = sorted([
-            b_file_to_node[f] for f in added_files
-        ])
-
-        removed_nodes = sorted([
-            a_file_to_node[f] for f in removed_files
-        ])
-
-        return added_nodes, modified_nodes, removed_nodes
-
-    def __str__(self):
-        logger.trace("Rendering string for TreeDiff")
-
-        return self.formatter.format(self)
+    @classmethod
+    def from_trees(cls, head, index, stage):
+        return cls(
+            head, index, stage
+        )
