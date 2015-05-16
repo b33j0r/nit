@@ -287,6 +287,12 @@ class BaseStorage(Storage):
     def put_tree(self, tree):
         return self.put_object(tree)
 
+    def get_object_key_for(
+        self, obj
+    ):
+        content = self._serialize_object_to_bytes(obj)
+        return self.get_object_key_for_content(content)
+
     def get_object_key_for_content(self, content):
         """
         :param content:

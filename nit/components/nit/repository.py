@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 """
 """
+import os
 from pathlib import Path
 from nit.core.diff import TreeDiffFormatter
 
@@ -9,6 +10,7 @@ from nit.core.errors import NitUserError, NitRefNotFoundError
 from nit.core.repository import Repository
 from nit.core.commit import Commit
 from nit.core.blob import Blob
+from nit.core.status import BaseStatusStrategy
 from nit.core.tree import Tree, TreeNode
 from nit.components.nit.ignore import NitIgnoreStrategy
 from nit.components.nit.storage import NitStorage
@@ -57,14 +59,24 @@ class NitRepository(Repository):
             # return
             head = Tree()
         index = self.storage.get_index()
+
         stage = Tree()
-        stage.add_node(TreeNode(
-            "ignored", "ddddf", True
-        ))
-        stage.add_node(TreeNode(
-            "included", "ddddf", False
-        ))
-        diff = head.diff(index, stage)
+        walk = os.walk(str(self.storage.paths.project))
+        for dirpath, dirnames, filenames in walk:
+            for filename in filenames:
+                p = Path(os.path.join(dirpath, filename))
+                if p.is_file() and p.exists():
+                    p.resolve()
+                    rp = p.relative_to(self.storage.paths.project)
+                    with open(str(p), 'rb') as file:
+                        contents = file.read()
+                        blob = Blob(contents)
+                        key = self.storage.get_object_key_for(blob)
+                        stage.add_node(TreeNode(rp, key))
+
+        diff = BaseStatusStrategy(
+            head, index, stage, ignorer=self.ignore.ignore
+        )
         fmt = TreeDiffFormatter()
         logger.info(fmt.format(diff))
 

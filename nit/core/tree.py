@@ -14,14 +14,13 @@ class TreeNode:
     """
     """
 
-    def __init__(self, relative_file_path, key, ignore=False):
+    def __init__(self, relative_file_path, key):
         self.path = Path(relative_file_path)
         self.key = key
-        self.ignore = ignore
 
     def __str__(self):
-        return "{} {} (ignore={})".format(
-            self.path, self.key, self.ignore
+        return "{} {}".format(
+            self.path, self.key
         )
 
     def __repr__(self):
@@ -46,8 +45,8 @@ class Tree(Storable):
 
     Node = TreeNode
 
-    def __init__(self):
-        self._nodes = set()
+    def __init__(self, nodes=None):
+        self._nodes = set(nodes or [])
 
     def __str__(self):
         return (
@@ -78,17 +77,27 @@ class Tree(Storable):
             key=lambda node: str(node.path)
         )
 
+    @property
+    def nodes_by_path(self):
+        return {
+            n.path: n for n in self._nodes
+        }
+
     def __iter__(self):
         return iter(self._nodes)
 
     def add_node(self, tree_node):
         if tree_node in self._nodes:
             return False
+        if tree_node.path in self.nodes_by_path:
+            self._nodes.remove(
+                self.nodes_by_path[tree_node.path]
+            )
         self._nodes.add(tree_node)
         return True
 
     def remove_node(self, tree_node):
         self._nodes.remove(tree_node)
 
-    def diff(self, other, stage=None):
-        return BaseTreeDiff.from_trees(self, other, stage)
+    def diff(self, other):
+        return BaseTreeDiff(self, other)

@@ -21,6 +21,9 @@ class IgnorePredicate(metaclass=ABCMeta):
         """
         base_path = Path(base_path)
         file_path = Path(file_path)
+        if not file_path.is_absolute():
+            relative_file_path = file_path
+            file_path = base_path/relative_file_path
         return self.ignore_path(base_path, file_path)
 
     @abstractmethod
@@ -65,6 +68,7 @@ class RelativeIgnorePredicate(IgnorePredicate):
         """
         base_path = Path(base_path)
         file_path = Path(file_path)
+
         try:
             relative_file_path = file_path.relative_to(
                 base_path
