@@ -135,20 +135,35 @@ class NitRepository(Repository):
         obj = self.storage.get_object(key)
         return str(obj)
 
+    def log(self, commit=None):
+        if not commit:
+            commit_key = self._get_head_commit_key()
+            commit = self.storage.get_object(commit_key)
+        if commit:
+            logger.info(commit)
+            if commit.parent_key:
+                parent_commit = self.storage.get_object(commit.parent_key)
+                return [commit] + self.log(commit=parent_commit)
+        return []
+
     def commit(self):
         index = self.storage.get_index()
         if not index:
             raise NitUserError("Nothing to commit!")
-        try:
-            branch_ref = self.storage.get_symbolic_ref("HEAD")
-            parent_key = self.storage.get_ref(branch_ref)
-        except:
-            parent_key = ""
+        parent_key = self._get_head_commit_key()
         tree_key = self.storage.put_tree(index)
         commit_obj = Commit(parent_key, tree_key, "Message!")
         commit_key = self.storage.put(commit_obj)
         self.storage.put_ref("heads/master", commit_key)
         self.storage.put_symbolic_ref("HEAD", "heads/master")
+
+    def _get_head_commit_key(self):
+        try:
+            branch_ref = self.storage.get_symbolic_ref("HEAD")
+            head_key = self.storage.get_ref(branch_ref)
+        except:
+            head_key = ""
+        return head_key
 
     def diff(self):
         raise Exception("boo")

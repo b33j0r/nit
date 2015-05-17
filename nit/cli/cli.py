@@ -84,6 +84,10 @@ class RepositoryProxy:
             s = s[:-1]
         logger.info(s)
 
+    @map_args()
+    def log(self):
+        self.repo.log()
+
     @map_args(
         arg_mappings=[]
     )
@@ -180,6 +184,12 @@ class BaseParserFactory(ParserFactory):
         parser_cat = subparsers.add_parser("diff")
         parser_cat.set_defaults(
             func=repository.diff
+        )
+
+        # Sub-parser for 'log' command
+        parser_log = subparsers.add_parser("log")
+        parser_log.set_defaults(
+            func=repository.log
         )
 
         # Sub-parser for 'commit' command
