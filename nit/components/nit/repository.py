@@ -3,6 +3,7 @@
 """
 import os
 from pathlib import Path
+import textwrap
 from nit.core.diff import TreeDiffFormatter
 
 from nit.core.log import getLogger
@@ -135,18 +136,38 @@ class NitRepository(Repository):
         obj = self.storage.get_object(key)
         return str(obj)
 
-    def log(self, commit=None):
-        if not commit:
-            commit_key = self._get_head_commit_key()
-            try:
-                commit = self.storage.get_object(commit_key)
-            except IsADirectoryError:
-                commit = None
+    def log(self, key=None):
+        if not key:
+            key = self._get_head_commit_key()
+        try:
+            commit = self.storage.get_object(key)
+        except IsADirectoryError:
+            commit = None
+
+        def indent(lines, amount, ch=' '):
+            lines = textwrap.fill(lines)
+            padding = amount * ch
+            return padding + ('\n'+padding).join(lines.split('\n'))
+
         if commit:
-            logger.info(commit)
+            logger.info(
+                (
+                    logger.Fore.YELLOW +
+                    "commit {key}\n" +
+                    logger.Fore.RESET +
+                    "Date:  {created_timestamp}\n"
+                    "\n"
+                    "{message}\n"
+                ).format(
+                    key=key,
+                    created_timestamp=commit.created_timestamp,
+                    message=indent(commit.message, 4)
+                )
+            )
             if commit.parent_key:
-                parent_commit = self.storage.get_object(commit.parent_key)
-                return [commit] + self.log(commit=parent_commit)
+                return [commit] + self.log(
+                    key=commit.parent_key
+                )
         return []
 
     def commit(self):
@@ -155,7 +176,11 @@ class NitRepository(Repository):
             raise NitUserError("Nothing to commit!")
         parent_key = self._get_head_commit_key()
         tree_key = self.storage.put_tree(index)
-        commit_obj = Commit(parent_key, tree_key, "Message!")
+        commit_obj = Commit(parent_key, tree_key,
+                            message="""
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris tincidunt tempor justo eget tempor.
+Aliquam vestibulum id erat sit amet vestibulum. Vivamus pulvinar tortor nisl, a mollis neque vulputate ut. Quisque massa neque, euismod eget elit sed, porttitor eleifend nisi. Praesent facilisis urna et tincidunt fermentum. Vestibulum rutrum nibh gravida, malesuada nisi quis, vulputate mauris. Mauris vel quam sit amet sapien ornare facilisis vel ut lacus. Maecenas sollicitudin tincidunt magna, vitae tincidunt turpis. Sed elementum auctor odio id ultricies. Proin non lorem ex. Suspendisse potenti. Maecenas ultricies, ex ut pharetra sagittis, erat lectus pretium nibh, vitae venenatis ipsum lacus vitae urna. Curabitur non tortor non lectus finibus tempor. Suspendisse potenti. Nullam feugiat, nibh eget sagittis tristique, dui mi elementum ante, eu condimentum massa ipsum et neque."""
+                            )
         commit_key = self.storage.put(commit_obj)
         self.storage.put_ref("heads/master", commit_key)
         self.storage.put_symbolic_ref("HEAD", "heads/master")

@@ -168,9 +168,7 @@ class NitSerializer(BaseSerializer):
             self.CHUNK_SEP_BYTE
         ).decode()
 
-        message = self.read_bytes_until(
-            self.CHUNK_SEP_BYTE
-        ).decode()
+        message = self.read_bytes().decode()
 
         commit = commit_cls(
             parent_key, tree_key,
