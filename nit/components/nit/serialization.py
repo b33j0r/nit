@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 """
 """
+from datetime import datetime
 from io import BytesIO
 from nit.core.commit import Commit
 from nit.core.index import Index
@@ -118,6 +119,10 @@ class NitSerializer(BaseSerializer):
             memory_serializer = self.__class__(memory_file)
 
             memory_serializer.write_string(
+                commit.created_timestamp.isoformat() + self.CHUNK_SEP_STR
+            )
+
+            memory_serializer.write_string(
                 commit.parent_key + self.CHUNK_SEP_STR
             )
 
@@ -148,6 +153,13 @@ class NitSerializer(BaseSerializer):
     def deserialize_commit(self, commit_cls):
         logger.trace("Deserializing Commit")
 
+        created_timestamp_str = self.read_bytes_until(
+            self.CHUNK_SEP_BYTE
+        ).decode()
+        created_timestamp = datetime.strptime(
+            created_timestamp_str, "%Y-%m-%dT%H:%M:%S.%f"
+        )
+
         parent_key = self.read_bytes_until(
             self.CHUNK_SEP_BYTE
         ).decode()
@@ -160,7 +172,11 @@ class NitSerializer(BaseSerializer):
             self.CHUNK_SEP_BYTE
         ).decode()
 
-        commit = commit_cls(parent_key, tree_key, message)
+        commit = commit_cls(
+            parent_key, tree_key,
+            message=message,
+            created_timestamp=created_timestamp
+        )
         return commit
 
     def serialize_tree(self, tree):

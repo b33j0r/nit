@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 """
 """
+from datetime import datetime
 from nit.core.storage import Storable
 
 
@@ -8,10 +9,11 @@ class Commit(Storable):
     """
     """
 
-    def __init__(self, parent_key, tree_key, message=""):
+    def __init__(self, parent_key, tree_key, message="", created_timestamp=None):
         self.tree_key = tree_key
         self.parent_key = parent_key
         self.message = message
+        self.created_timestamp = created_timestamp or datetime.now()
 
     def accept_put(self, storage):
         return storage.put_commit(self)
@@ -25,11 +27,12 @@ class Commit(Storable):
 
     def __str__(self):
         return (
-            "Commit Object\n"
+            "Created: {}\n"
             "Parent:  {}\n"
             "  Tree:  {}\n"
             "\n{}\n\n"
         ).format(
+            self.created_timestamp,
             self.parent_key or "none",
             self.tree_key,
             self.message

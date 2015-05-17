@@ -138,7 +138,10 @@ class NitRepository(Repository):
     def log(self, commit=None):
         if not commit:
             commit_key = self._get_head_commit_key()
-            commit = self.storage.get_object(commit_key)
+            try:
+                commit = self.storage.get_object(commit_key)
+            except IsADirectoryError:
+                commit = None
         if commit:
             logger.info(commit)
             if commit.parent_key:
