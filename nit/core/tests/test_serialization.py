@@ -2,11 +2,10 @@
 """
 """
 import io
-from unittest import TestCase
 
 from nit.core.serialization import BaseSerializer
 from nit.components.nit.serialization import NitSerializer
-from nit.core.blob import Blob
+from nit.core.objects.blob import Blob
 from nit.core.tests.util import NitTestCase
 
 

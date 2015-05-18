@@ -2,7 +2,7 @@
 """
 """
 
-from nit.core.tree import Tree
+from nit.core.objects.tree import Tree
 
 
 class Index(Tree):

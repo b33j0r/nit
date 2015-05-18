@@ -4,19 +4,18 @@
 import os
 from pathlib import Path
 import textwrap
-from nit.core.diff import TreeDiffFormatter
 
+from nit.core.diff import TreeDiffFormatter
 from nit.core.log import getLogger
 from nit.core.errors import NitUserError, NitRefNotFoundError
 from nit.core.repository import Repository
-from nit.core.commit import Commit
-from nit.core.blob import Blob
+from nit.core.objects.commit import Commit
+from nit.core.objects.blob import Blob
+from nit.core.objects.tree import Tree, TreeNode
 from nit.core.status import BaseStatusStrategy
-from nit.core.tree import Tree, TreeNode
 from nit.components.nit.ignore import NitIgnoreStrategy
 from nit.components.nit.storage import NitStorage
 from nit.components.nit.serialization import NitSerializer
-
 
 logger = getLogger(__name__)
 
@@ -87,7 +86,7 @@ class NitRepository(Repository):
         index = self.storage.get_index()
 
         if not index:
-            from nit.core.index import Index
+            from nit.core.objects.index import Index
             index = Index()
 
         file_paths = [

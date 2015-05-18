@@ -30,7 +30,7 @@ class Commit(Storable):
             "Created: {}\n"
             "Parent:  {}\n"
             "  Tree:  {}\n"
-            "\n{}\n\n"
+            "\n{}\n"
         ).format(
             self.created_timestamp,
             self.parent_key or "none",

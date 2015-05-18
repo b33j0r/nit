@@ -3,13 +3,13 @@
 """
 from datetime import datetime
 from io import BytesIO
-from nit.core.commit import Commit
-from nit.core.index import Index
 
+from nit.core.objects.tree import Tree
+from nit.core.objects.index import Index
+from nit.core.objects.blob import Blob
+from nit.core.objects.commit import Commit
 from nit.core.log import getLogger
 from nit.core.serialization import BaseSerializer
-from nit.core.tree import Tree
-from nit.core.blob import Blob
 
 logger = getLogger(__name__)
 
@@ -131,7 +131,7 @@ class NitSerializer(BaseSerializer):
             )
 
             memory_serializer.write_string(
-                commit.message + self.CHUNK_SEP_STR
+                commit.message
             )
 
             logger.trace(

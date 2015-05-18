@@ -3,16 +3,14 @@
 """
 from tempfile import TemporaryDirectory
 from pathlib import Path
-from unittest import mock, skip
+from unittest import mock
+
 from nit.components.nit.serialization import NitSerializer
-from nit.core.commit import Commit
+from nit.core.objects.commit import Commit
 from nit.core.paths import BasePaths
 from nit.core.serialization import BaseSerializer
 from nit.core.storage import BaseStorage
-
 from nit.core.tests.util import NitTestCase
-from nit.components.nit.storage import NitStorage
-from nit.core.blob import Blob
 
 
 class TestBaseStorageCreation(NitTestCase):
@@ -79,7 +77,7 @@ class TestBaseStorage(NitTestCase):
         assert self.storage.paths.refs.exists()
         assert self.storage.paths.objects.exists()
 
-    @mock.patch("nit.core.blob.Blob")
+    @mock.patch("nit.core.objects.blob.Blob")
     def test_put_calls_accept_put(self, MockBlob):
         mock_blob = MockBlob()
         self.storage.put(mock_blob)
