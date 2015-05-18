@@ -194,6 +194,9 @@ class NitRepository(Repository):
         return []
 
     def commit(self, message=""):
+        if not message:
+            raise NitUserError('No commit message! '
+                               '(nit commit -m "<msg>")')
         index = self.storage.get_index()
         if not index:
             raise NitUserError("Nothing to commit!")
