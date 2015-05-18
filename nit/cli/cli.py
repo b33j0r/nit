@@ -89,10 +89,11 @@ class RepositoryProxy:
         self.repo.log()
 
     @map_args(
-        arg_mappings=[]
+        arg_mappings=[],
+        kwarg_mappings=["message"]
     )
-    def commit(self, **kwargs):
-        self.repo.commit(**kwargs)
+    def commit(self, message=None, **kwargs):
+        self.repo.commit(message=message, **kwargs)
 
     def checkout(self, args):
         print("CHECKOUT was called with {}".format(args))
@@ -197,6 +198,7 @@ class BaseParserFactory(ParserFactory):
         parser_commit.set_defaults(
             func=repository.commit
         )
+        parser_commit.add_argument("-m", "--message", type=str)
 
         # Sub-parser for 'checkout' command
         parser_checkout = subparsers.add_parser("checkout")
