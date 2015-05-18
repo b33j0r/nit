@@ -132,9 +132,43 @@ class NitRepository(Repository):
 
         return blobs
 
+    def _reformat_message(self, text, indent=4, ch=' '):
+        text = text.strip()
+
+        lines = text.split("\n")
+        lines = "\n".join(textwrap.fill(line)
+                          for line in lines)
+
+        padding = indent * ch
+        return padding + ('\n'+padding).join(
+            lines.split('\n')
+        )
+
     def cat(self, key):
         obj = self.storage.get_object(key)
         return str(obj)
+
+    def _format_commit(self, key, commit):
+        message = self._reformat_message(
+            commit.message
+        )
+        return (
+            logger.Fore.YELLOW +
+            "commit {key}\n" +
+            logger.Fore.RESET +
+            "Author:  (not implemented)\n"
+            "Date:    {created_timestamp}\n"
+            "Tree:    {tree_key}\n"
+            "Parent:  {parent_key}\n"
+            "\n"
+            "{message}\n"
+        ).format(
+            key=key,
+            created_timestamp=commit.created_timestamp,
+            tree_key=key,
+            parent_key=commit.parent_key or "(none)",
+            message=message
+        )
 
     def log(self, key=None):
         if not key:
@@ -144,27 +178,9 @@ class NitRepository(Repository):
         except IsADirectoryError:
             commit = None
 
-        def indent(text, amount, ch=' '):
-            lines = text.split("\n")
-            lines = "\n".join(textwrap.fill(line) for line in lines)
-
-            padding = amount * ch
-            return padding + ('\n'+padding).join(lines.split('\n'))
-
         if commit:
             logger.info(
-                (
-                    logger.Fore.YELLOW +
-                    "commit {key}\n" +
-                    logger.Fore.RESET +
-                    "Date:  {created_timestamp}\n"
-                    "\n"
-                    "{message}\n"
-                ).format(
-                    key=key,
-                    created_timestamp=commit.created_timestamp,
-                    message=indent(commit.message, 4)
-                )
+                self._format_commit(key, commit)
             )
             if commit.parent_key:
                 return [commit] + self.log(
