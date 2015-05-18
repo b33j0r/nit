@@ -60,6 +60,15 @@ class NitRepository(Repository):
             head = Tree()
         index = self.storage.get_index()
 
+        working = self._get_working_tree()
+
+        diff = BaseStatusStrategy(
+            head, index, working, ignorer=self.ignore.ignore
+        )
+        fmt = TreeDiffFormatter()
+        logger.info(fmt.format(diff))
+
+    def _get_working_tree(self):
         stage = Tree()
         walk = os.walk(str(self.storage.paths.project))
         for dirpath, dirnames, filenames in walk:
@@ -73,12 +82,7 @@ class NitRepository(Repository):
                         blob = Blob(contents)
                         key = self.storage.get_object_key_for(blob)
                         stage.add_node(TreeNode(rp, key))
-
-        diff = BaseStatusStrategy(
-            head, index, stage, ignorer=self.ignore.ignore
-        )
-        fmt = TreeDiffFormatter()
-        logger.info(fmt.format(diff))
+        return stage
 
     def add(self, *relative_file_paths, force=False):
         blobs = []
