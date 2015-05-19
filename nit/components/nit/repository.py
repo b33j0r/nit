@@ -3,6 +3,8 @@
 """
 import os
 from pathlib import Path
+import subprocess
+import tempfile
 import textwrap
 
 from nit.core.diff import TreeDiffFormatter
@@ -170,7 +172,7 @@ class NitRepository(Repository):
         ).format(
             key=key,
             created_timestamp=commit.created_timestamp,
-            tree_key=key,
+            tree_key=commit.tree_key,
             parent_key=commit.parent_key or "(none)",
             message=message
         )
@@ -195,8 +197,9 @@ class NitRepository(Repository):
 
     def commit(self, message=""):
         if not message:
-            raise NitUserError('No commit message! '
-                               '(nit commit -m "<msg>")')
+            message = self._get_commit_message_with_editor()
+        if not message:
+            raise NitUserError("No commit message specified!")
         index = self.storage.get_index()
         if not index:
             raise NitUserError("Nothing to commit!")
@@ -206,6 +209,24 @@ class NitRepository(Repository):
         commit_key = self.storage.put(commit_obj)
         self.storage.put_ref("heads/master", commit_key)
         self.storage.put_symbolic_ref("HEAD", "heads/master")
+
+    def _get_editor_command(self, temp_file_path):
+        editor = os.environ.get("EDITOR", "vi")
+        return [editor, temp_file_path]
+
+    def _get_commit_message_with_editor(self):
+        temp_file_path = tempfile.mktemp(
+            prefix="commit-message-"
+        )
+        editor_cmd = self._get_editor_command(temp_file_path)
+        if subprocess.check_call(editor_cmd):
+            return None
+        if not os.path.exists(temp_file_path):
+            return None
+        with open(temp_file_path, 'r', encoding='utf-8') as tf:
+            message = tf.read()
+            message = message.strip()
+            return message
 
     def _get_head_commit_key(self):
         try:
