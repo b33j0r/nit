@@ -8,10 +8,8 @@ from abc import (
     abstractproperty)
 import io
 import os
-import glob
 import hashlib
 import shutil
-from pathlib import Path
 
 from nit.core.log import getLogger
 from nit.core.serialization import Serializable, BaseSerializer
@@ -24,7 +22,7 @@ logger = getLogger(__name__)
 class Storable(Serializable, metaclass=ABCMeta):
 
     """
-    Something that can be stored, such as a file or a commit.
+    Something that can be stored, such as a blob (file) or a commit.
     """
 
     @abstractmethod
@@ -33,12 +31,97 @@ class Storable(Serializable, metaclass=ABCMeta):
         Accept method for a storage visitor storing the object.
 
         Should call the appropriate put_ method on `storage`
-        with `self` as the only argument.
+        with `self` as the only argument and return the result.
         """
-        pass
 
 
-class Storage(metaclass=ABCMeta):
+class ObjectStorage(metaclass=ABCMeta):
+
+    """
+    """
+
+    @abstractmethod
+    def get(self, keyish):
+        """
+        Returns an instance of `Storable` matching the given `keyish`
+
+        :param keyish:
+        :return (Storable):
+        """
+
+    def put(self, storable):
+        """
+        Writes a `Storable` to the ObjectStorage.
+
+        :param storable (Storable): The object to insert
+        :return key (str): The key of the object stored
+        """
+        return storable.accept_put(self)
+
+
+class RefStorage(ObjectStorage, metaclass=ABCMeta):
+
+    """
+    """
+
+    @abstractmethod
+    def get_ref(self, refspec):
+        """
+        Returns the value of the ref at `refspec`
+        """
+
+    @abstractmethod
+    def put_ref(self, refspec, key):
+        """
+        Stores key in the ref at `refspec`
+        """
+
+    @abstractmethod
+    def get_symbolic_ref(self, name):
+        """
+        Returns the ref referenced by `name`
+        """
+
+    @abstractmethod
+    def put_symbolic_ref(self, name, ref):
+        """
+        Stores ref in the symbolic ref referenced by `name`
+        """
+
+    def resolve_ref(self, refspec):
+        """
+        Returns the object referenced by `refspec`
+        """
+        key = self.get_ref(refspec)
+        return self.get(key)
+
+    def resolve_symbolic_ref(self, name):
+        """
+        Returns the object referenced by `name`
+        """
+        refspec = self.get_symbolic_ref(name)
+        return self.resolve_ref(refspec)
+
+
+class MetadataStorage(metaclass=ABCMeta):
+
+    """
+    """
+
+    @abstractmethod
+    def get_config(self):
+        """
+        :return (Config): The current configuration
+        """
+
+    @abstractmethod
+    def get_index(self):
+        """
+        :return (Index): The index
+        """
+
+
+class Storage(RefStorage, MetadataStorage, metaclass=ABCMeta):
 
     """
     """
@@ -55,46 +138,6 @@ class Storage(metaclass=ABCMeta):
     def destroy(self, ignore_errors=True):
         pass
 
-    @abstractmethod
-    def put(self, storable):
-        """
-        Writes a `Storable` to the Storage.
-
-        :param storable (Storable): The object to insert
-        """
-        pass
-
-    @abstractmethod
-    def get_ref(self, ref):
-        pass
-
-    @abstractmethod
-    def put_ref(self, ref, key):
-        pass
-
-    @abstractmethod
-    def get_treeish(self, treeish):
-        pass
-
-    @abstractmethod
-    def get_object(self, keyish):
-        """
-        Returns an instance of `Storable` having the given `key`
-
-        :param key:
-        :return (Storable):
-        """
-        pass
-
-    @abstractmethod
-    def get_index(self):
-        """
-        Returns the index
-
-        :return (Index):
-        """
-        pass
-
 
 class BaseStorage(Storage):
 
@@ -109,30 +152,12 @@ class BaseStorage(Storage):
         self.paths = paths_strategy
         self._serialization_cls = serialization_cls
 
+    def get_config(self):
+        return None
+
     @property
     def exists(self):
         return self.paths.repo.exists()
-
-    def destroy(self, ignore_errors=True):
-        """
-
-        :param ignore_errors:
-        :return:
-        """
-        logger.debug(
-            ("Destroying {repository_name} "
-             "repository in {repository_path}").format(
-                repository_name=
-                self.__class__.__name__.replace(
-                    "Storage", ""
-                ),
-                repository_path=self.paths.repo
-            )
-        )
-        shutil.rmtree(
-            self.paths.repo_str,
-            ignore_errors=ignore_errors
-        )
 
     def create(self, force=False):
         """
@@ -171,6 +196,29 @@ class BaseStorage(Storage):
         self.paths.refs.mkdir()
         self.paths.objects.mkdir()
 
+    def destroy(self, ignore_errors=True):
+        """
+
+        :param ignore_errors:
+        :return:
+        """
+        logger.debug(
+            ("Destroying {repository_name} "
+             "repository in {repository_path}").format(
+                repository_name=self.__class__.__name__.replace(
+                    "Storage", ""
+                ),
+                repository_path=self.paths.repo
+            )
+        )
+        shutil.rmtree(
+            self.paths.repo_str,
+            ignore_errors=ignore_errors
+        )
+
+    def get(self, keyish):
+        return self.get_object(keyish)
+
     def put(self, obj):
         """
 
@@ -179,21 +227,25 @@ class BaseStorage(Storage):
         """
         return obj.accept_put(self)
 
-    def put_object(self, obj):
-        content = self._serialize_object_to_bytes(obj)
-        key = self.get_object_key_for_content(content)
-        self._write_object(key, content)
-        return key
-
     def get_object(self, keyish):
         file_path = self.paths.get_object_path(
             keyish, must_exist=True
         )
+
+        if not file_path.exists() or file_path.is_dir():
+            return None
+
         file_path = str(file_path)
 
         with open(file_path, 'rb') as f:
             s = self._serialization_cls(f)
             return s.deserialize()
+
+    def put_object(self, obj):
+        content = self._serialize_object_to_bytes(obj)
+        key = self.get_object_key_for_content(content)
+        self._write_object(key, content)
+        return key
 
     def _write_object(self, key, content):
         """
@@ -232,15 +284,6 @@ class BaseStorage(Storage):
                 "   {}".format(key)
             )
 
-    def get_treeish(self, treeish):
-        return self.get_object(treeish)
-
-    def put_symbolic_ref(self, name, ref):
-        ref_path = self.paths.repo/name
-        with open(str(ref_path), 'wb') as file:
-            b = ref.encode()
-            file.write(b)
-
     def get_symbolic_ref(self, name):
         ref_path = self.paths.repo/name
         if not ref_path.exists():
@@ -250,11 +293,10 @@ class BaseStorage(Storage):
             symbolic_ref = b.decode()
             return symbolic_ref
 
-    def put_ref(self, ref, key):
-        ref_path = self.paths.get_ref_path(ref)
-        os.makedirs(str(ref_path.parent), exist_ok=True)
+    def put_symbolic_ref(self, name, ref):
+        ref_path = self.paths.repo/name
         with open(str(ref_path), 'wb') as file:
-            b = key.encode()
+            b = ref.encode()
             file.write(b)
 
     def get_ref(self, ref):
@@ -265,10 +307,12 @@ class BaseStorage(Storage):
             b = file.read()
             return b.decode()
 
-    def put_index(self, index):
-        with open(self.paths.index_str, 'wb') as file:
-            s = self._serialization_cls(file)
-            s.serialize(index)
+    def put_ref(self, ref, key):
+        ref_path = self.paths.get_ref_path(ref)
+        os.makedirs(str(ref_path.parent), exist_ok=True)
+        with open(str(ref_path), 'wb') as file:
+            b = key.encode()
+            file.write(b)
 
     def get_index(self):
         try:
@@ -277,6 +321,11 @@ class BaseStorage(Storage):
                 return s.deserialize()
         except FileNotFoundError:
             return None
+
+    def put_index(self, index):
+        with open(self.paths.index_str, 'wb') as file:
+            s = self._serialization_cls(file)
+            s.serialize(index)
 
     def put_blob(self, blob):
         return self.put_object(blob)

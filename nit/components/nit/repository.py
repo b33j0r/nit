@@ -166,7 +166,7 @@ class NitRepository(Repository):
             "Author:  (not implemented)\n"
             "Date:    {created_timestamp}\n"
             "Tree:    {tree_key}\n"
-            "Parent:  {parent_key}\n"
+            # "Parent:  {parent_key}\n"
             "\n"
             "{message}\n"
         ).format(
@@ -196,15 +196,19 @@ class NitRepository(Repository):
         return []
 
     def commit(self, message=""):
-        if not message:
-            message = self._get_commit_message_with_editor()
-        if not message:
-            raise NitUserError("No commit message specified!")
         index = self.storage.get_index()
         if not index:
             raise NitUserError("Nothing to commit!")
         parent_key = self._get_head_commit_key()
+        parent_commit = self.storage.get_object(parent_key)
         tree_key = self.storage.put_tree(index)
+        if parent_commit and tree_key == parent_commit.tree_key:
+            raise NitUserError("The tree to be committed "
+                               "is identical to the parent.")
+        if not message:
+            message = self._get_commit_message_with_editor()
+        if not message:
+            raise NitUserError("No commit message specified!")
         commit_obj = Commit(parent_key, tree_key, message=message)
         commit_key = self.storage.put(commit_obj)
         self.storage.put_ref("heads/master", commit_key)

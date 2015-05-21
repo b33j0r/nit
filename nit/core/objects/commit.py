@@ -15,15 +15,19 @@ class Commit(Storable):
         self.message = message
         self.created_timestamp = created_timestamp or datetime.now()
 
+    @classmethod
+    def accept_get(cls, storage, keyish):
+        return storage.get_commit(cls, keyish)
+
     def accept_put(self, storage):
         return storage.put_commit(self)
-
-    def accept_serializer(self, serializer):
-        return serializer.serialize_commit(self)
 
     @classmethod
     def accept_deserializer(cls, deserializer):
         return deserializer.deserialize_commit(cls)
+
+    def accept_serializer(self, serializer):
+        return serializer.serialize_commit(self)
 
     def __str__(self):
         return (
