@@ -14,10 +14,6 @@ this_file_path = Path(__file__)
 this_dir_path = this_file_path.parent
 project_path = this_dir_path.parent
 
-# Interesting note if you're new to pathlib or python3,
-# you must convert the path object to a string, as sys.path
-# is still a list of strings in Python 3.4
-
 try:
     sys.path.remove(str(this_dir_path))
 except:

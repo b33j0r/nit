@@ -3,6 +3,7 @@
 
 """
 import abc
+from os.path import expanduser
 from pathlib import Path
 
 from nit.core.errors import NitUserError
@@ -87,6 +88,14 @@ class BasePaths(Paths):
         raise AttributeError()
 
     @property
+    def global_config_name(self):
+        return ".nitconfig"
+
+    @property
+    def config_name(self):
+        return "config"
+
+    @property
     def repo_name(self):
         """
         e.g. ".git", ".nit"
@@ -132,6 +141,20 @@ class BasePaths(Paths):
         e.g. ".gitignore", ".nitignore"
         """
         return self.repo_name + "ignore"
+
+    @property
+    def global_config(self):
+        """
+        :return (Path):
+        """
+        return Path(expanduser("~"))/self.global_config_name
+
+    @property
+    def config(self):
+        """
+        :return (Path):
+        """
+        return self.repo/self.config_name
 
     @property
     def repo(self):

@@ -6,6 +6,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 import textwrap
+from io import BytesIO
 from nit.components.git.status import GitStatusFormatter
 from nit.components.nit.status import NitStatusFormatter
 
@@ -14,7 +15,7 @@ from nit.core.errors import NitUserError, NitRefNotFoundError
 from nit.core.repository import Repository
 from nit.core.objects.commit import Commit
 from nit.core.objects.blob import Blob
-from nit.core.objects.tree import Tree, TreeNode
+from nit.core.objects.tree import Tree
 from nit.core.status import BaseStatusStrategy
 from nit.components.nit.ignore import NitIgnoreStrategy
 from nit.components.nit.storage import NitStorage
@@ -31,7 +32,9 @@ class NitRepository(Repository):
         paths,
         storage_cls=NitStorage,
         serialization_cls=NitSerializer,
-        ignore_cls=NitIgnoreStrategy
+        ignore_cls=NitIgnoreStrategy,
+        status_cls=BaseStatusStrategy,
+        status_format_cls=GitStatusFormatter
     ):
         self.storage = storage_cls(
             paths,
@@ -40,6 +43,8 @@ class NitRepository(Repository):
         self.ignore = ignore_cls(
             paths
         )
+        self._status_cls = status_cls
+        self._status_format_cls = status_format_cls
 
     @property
     def exists(self):
@@ -52,40 +57,39 @@ class NitRepository(Repository):
         self.storage.destroy()
 
     def status(self):
-        try:
-            head_commit = self.storage.resolve_symbolic_ref("HEAD")
-            head = self.storage.get_object(head_commit.tree_key)
-        except NitRefNotFoundError as exc:
-            logger.info("Initial commit")
-            # return
-            head = Tree()
-        index = self.storage.get_index()
-
-        working = self._get_working_tree()
-
-        diff = BaseStatusStrategy(
-            head, index, working, ignorer=self.ignore.ignore
+        status = self._status_cls.from_repo(
+            self, ignorer=self.ignore.ignore
         )
-        fmt = GitStatusFormatter()
-        status_str = fmt.format(diff)
-        logger.info(status_str)
-        return status_str
+        status_fmt = self._status_format_cls(status)
+        logger.info(status_fmt)
+        return str(status_fmt)
 
-    def _get_working_tree(self):
-        stage = Tree()
-        walk = os.walk(str(self.storage.paths.project))
-        for dirpath, dirnames, filenames in walk:
-            for filename in filenames:
-                p = Path(os.path.join(dirpath, filename))
-                if p.is_file() and p.exists():
-                    p.resolve()
-                    rp = p.relative_to(self.storage.paths.project)
-                    with open(str(p), 'rb') as file:
-                        contents = file.read()
-                        blob = Blob(contents)
-                        key = self.storage.get_object_key_for(blob)
-                        stage.add_node(TreeNode(rp, key))
-        return stage
+    def config(self, set_value=None, use_global=False):
+        config = self.storage.get_config()
+
+        if use_global:
+            config = config.global_config
+        else:
+            config = config.repo_config
+
+        if not 0 <= len(set_value) <= 2:
+            raise NitUserError("config accepts 0-2 arguments")
+
+        if len(set_value) == 0:
+            logger.info(config)
+            return config
+
+        try:
+            key, value = set_value
+            config[key] = value
+            config.save()
+            logger.info(value)
+        except ValueError:
+            key = set_value[0]
+            value = config.get(key)
+            if value:
+                logger.info(value)
+            return value
 
     def add(self, *relative_file_paths, force=False):
         blobs = []
@@ -118,7 +122,7 @@ class NitRepository(Repository):
                     )
                 )
                 continue
-            with open(str(file_path), 'rb') as file:
+            with file_path.open('rb') as file:
                 contents = file.read()
                 blob = Blob(contents)
                 key = self.storage.put(blob)
@@ -162,7 +166,7 @@ class NitRepository(Repository):
             logger.Fore.YELLOW +
             "commit {key}\n" +
             logger.Fore.RESET +
-            "Author:  (not implemented)\n"
+            "Author:  {author}\n"
             "Date:    {created_timestamp}\n"
             "Tree:    {tree_key}\n"
             # "Parent:  {parent_key}\n"
@@ -170,6 +174,7 @@ class NitRepository(Repository):
             "{message}\n"
         ).format(
             key=key,
+            author=commit.author,
             created_timestamp=commit.created_timestamp,
             tree_key=commit.tree_key,
             parent_key=commit.parent_key or "(none)",
@@ -195,6 +200,11 @@ class NitRepository(Repository):
         return []
 
     def commit(self, message=""):
+        config = self.storage.get_config()
+        author_str = "{} <{}>".format(
+            config["user.name"],
+            config["user.email"]
+        )
         index = self.storage.get_index()
         if not index:
             raise NitUserError("Nothing to commit!")
@@ -208,7 +218,14 @@ class NitRepository(Repository):
             message = self._get_commit_message_with_editor()
         if not message:
             raise NitUserError("No commit message specified!")
-        commit_obj = Commit(parent_key, tree_key, message=message)
+
+        commit_obj = Commit(
+            parent_key,
+            tree_key,
+            message=message,
+            author=author_str
+        )
+
         commit_key = self.storage.put(commit_obj)
         self.storage.put_ref("heads/master", commit_key)
         self.storage.put_symbolic_ref("HEAD", "heads/master")

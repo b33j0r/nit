@@ -123,6 +123,10 @@ class NitSerializer(BaseSerializer):
             )
 
             memory_serializer.write_string(
+                commit.author + self.CHUNK_SEP_STR
+            )
+
+            memory_serializer.write_string(
                 commit.parent_key + self.CHUNK_SEP_STR
             )
 
@@ -136,9 +140,11 @@ class NitSerializer(BaseSerializer):
 
             logger.trace(
                 ("Serialized Commit:\n"
+                 "    Author:  {}\n"
                  "    Parent:  {}\n"
                  "    Tree:    {}\n\n"
                  "{}").format(
+                    commit.author,
                     commit.parent_key,
                     commit.tree_key,
                     commit.message
@@ -160,6 +166,10 @@ class NitSerializer(BaseSerializer):
             created_timestamp_str, "%Y-%m-%dT%H:%M:%S.%f"
         )
 
+        author = self.read_bytes_until(
+            self.CHUNK_SEP_BYTE
+        ).decode()
+
         parent_key = self.read_bytes_until(
             self.CHUNK_SEP_BYTE
         ).decode()
@@ -173,7 +183,8 @@ class NitSerializer(BaseSerializer):
         commit = commit_cls(
             parent_key, tree_key,
             message=message,
-            created_timestamp=created_timestamp
+            created_timestamp=created_timestamp,
+            author=author
         )
         return commit
 

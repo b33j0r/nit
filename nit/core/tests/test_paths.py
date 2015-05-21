@@ -194,14 +194,14 @@ class BasePathsTests(TestCase):
         c1.touch()
         c2.touch()
 
-        search_results = (
+        search_results = set(
             self.paths.find_object_paths_matching("c")
         )
 
-        self.assertEqual(
+        self.assertSetEqual(
             search_results,
-            [
+            {
                 self.paths.objects/"c1",
                 self.paths.objects/"c2"
-            ]
+            }
         )

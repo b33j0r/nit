@@ -9,7 +9,7 @@ from nit.components.nit.serialization import NitSerializer
 from nit.core.objects.commit import Commit
 from nit.core.paths import BasePaths
 from nit.core.serialization import BaseSerializer
-from nit.core.storage import BaseStorage
+from nit.components.base.storage import BaseStorage
 from nit.core.tests.util import NitTestCase
 
 
@@ -92,20 +92,20 @@ class TestBaseStorage(NitTestCase):
 
         assert head_path.exists()
 
-        with open(str(head_path), 'rb') as file:
+        with head_path.open('rb') as file:
             b = file.read()
             assert b.decode() == "origin/master"
 
     def test_get_symbolic_ref(self):
         ref = "origin/master"
         head_path = self.storage.paths.repo/"HEAD"
-        with open(str(head_path), 'wb') as file:
+        with head_path.open('wb') as file:
             b = ref.encode()
             file.write(b)
 
         self.storage.get_symbolic_ref("HEAD")
 
-        with open(str(head_path), 'rb') as file:
+        with head_path.open('rb') as file:
             b = file.read()
             assert b.decode() == "origin/master"
 
@@ -118,18 +118,18 @@ class TestBaseStorage(NitTestCase):
 
         assert ref_path.exists()
 
-        with open(str(ref_path), 'rb') as file:
+        with ref_path.open('rb') as file:
             b = file.read()
             assert b.decode() == "aaaa"
 
     def test_get_ref(self):
         ref_path = self.storage.paths.refs/"origin/master"
         ref_path.parent.mkdir(parents=True)
-        with open(str(ref_path), 'wb') as file:
+        with ref_path.open('wb') as file:
             b = "aaaa".encode()
             file.write(b)
 
-        with open(str(ref_path), 'rb') as file:
+        with ref_path.open('rb') as file:
             b = file.read()
             assert b.decode() == "aaaa"
 

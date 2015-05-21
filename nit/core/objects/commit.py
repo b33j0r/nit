@@ -9,11 +9,19 @@ class Commit(Storable):
     """
     """
 
-    def __init__(self, parent_key, tree_key, message="", created_timestamp=None):
+    def __init__(
+            self,
+            parent_key,
+            tree_key,
+            message="",
+            created_timestamp=None,
+            author=None
+    ):
         self.tree_key = tree_key
         self.parent_key = parent_key
         self.message = message
         self.created_timestamp = created_timestamp or datetime.now()
+        self.author = author or "Unknown <unknown>"
 
     @classmethod
     def accept_get(cls, storage, keyish):

@@ -64,6 +64,15 @@ class RepositoryProxy:
         self.repo.status()
 
     @map_args(
+        kwarg_mappings=[
+            "set_value",
+            "use_global"
+        ]
+    )
+    def config(self, set_value=None, use_global=False):
+        self.repo.config(set_value=set_value, use_global=use_global)
+
+    @map_args(
         arg_mappings=["files"],
         kwarg_mappings=["force"]
     )
@@ -161,6 +170,21 @@ class BaseParserFactory(ParserFactory):
         parser_status = subparsers.add_parser("status")
         parser_status.set_defaults(
             func=repository.status
+        )
+
+        # Sub-parser for 'config' command
+        parser_config = subparsers.add_parser("config")
+        parser_config.set_defaults(
+            func=repository.config
+        )
+        parser_config.add_argument(
+            "--global",
+            dest="use_global",
+            action='store_true'
+        )
+        parser_config.add_argument(
+            "set_value", nargs="*",
+            metavar=("KEY", "VALUE")
         )
 
         # Sub-parser for 'add' command

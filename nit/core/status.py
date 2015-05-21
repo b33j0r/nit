@@ -4,11 +4,19 @@
 from abc import ABCMeta, abstractproperty, abstractmethod
 
 from nit.core.diff import BaseTreeDiff
+from nit.core.errors import NitRefNotFoundError
+from nit.core.objects.tree import Tree
+from nit.core.repository import Repository
 
 
 class StatusStrategy(metaclass=ABCMeta):
     """
     """
+
+    @abstractproperty
+    def branch(self):
+        """
+        """
 
     @abstractproperty
     def added(self):
@@ -36,23 +44,48 @@ class StatusStrategy(metaclass=ABCMeta):
 
 
 class BaseStatusStrategy(StatusStrategy):
+
     """
     """
 
     def __init__(
         self, head, index, working,
-        ignorer=None, tree_diff_cls=BaseTreeDiff
+        ignorer=None,
+        tree_diff_cls=BaseTreeDiff
     ):
-        # print("working")
-        # print(working)
-        # print("index")
-        # print(index)
-        # print("head")
-        # print(head)
         self._ignorer = ignorer or (lambda n: False)
+
         self.head_index = tree_diff_cls(head, index)
         self.head_working = tree_diff_cls(head, working)
         self.index_working = tree_diff_cls(index, working)
+
+    @classmethod
+    def from_repo(
+        cls, repo, ignorer=None, tree_diff_cls=BaseTreeDiff
+    ):
+        try:
+            head_commit = repo.storage.resolve_symbolic_ref(
+                "HEAD"
+            )
+            head = repo.storage.get_object(
+                head_commit.tree_key
+            )
+        except NitRefNotFoundError:
+            head = Tree()
+
+        index = repo.storage.get_index()
+        working = repo.storage.get_working_tree()
+
+        return cls(
+            head, index, working,
+            ignorer=ignorer,
+            tree_diff_cls=tree_diff_cls
+        )
+
+    @property
+    def branch(self):
+        """
+        """
 
     @property
     def added(self):
@@ -135,6 +168,7 @@ class BaseStatusStrategy(StatusStrategy):
             in self.untracked_all
             if self._ignorer(n.path)
         )
+
 
 class StatusFormatter(metaclass=ABCMeta):
 

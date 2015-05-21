@@ -1,11 +1,9 @@
 #! /usr/bin/env python
 """
 """
-from itertools import chain
+import re
 import os
 from pathlib import Path
-import re
-import pathspec
 from abc import ABCMeta, abstractmethod
 
 
