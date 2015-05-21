@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 """
 """
-from abc import ABCMeta, abstractproperty
+from abc import ABCMeta, abstractproperty, abstractmethod
 
 from nit.core.diff import BaseTreeDiff
 
@@ -135,3 +135,14 @@ class BaseStatusStrategy(StatusStrategy):
             in self.untracked_all
             if self._ignorer(n.path)
         )
+
+class StatusFormatter(metaclass=ABCMeta):
+
+    """
+    """
+
+    @abstractmethod
+    def format(self, status):
+        """
+        :return (str):
+        """

@@ -6,8 +6,9 @@ from pathlib import Path
 import subprocess
 import tempfile
 import textwrap
+from nit.components.git.status import GitStatusFormatter
+from nit.components.nit.status import NitStatusFormatter
 
-from nit.core.diff import TreeDiffFormatter
 from nit.core.log import getLogger
 from nit.core.errors import NitUserError, NitRefNotFoundError
 from nit.core.repository import Repository
@@ -30,7 +31,7 @@ class NitRepository(Repository):
         paths,
         storage_cls=NitStorage,
         serialization_cls=NitSerializer,
-        ignore_cls = NitIgnoreStrategy
+        ignore_cls=NitIgnoreStrategy
     ):
         self.storage = storage_cls(
             paths,
@@ -52,9 +53,7 @@ class NitRepository(Repository):
 
     def status(self):
         try:
-            symbolic_ref = self.storage.get_symbolic_ref("HEAD")
-            head_key = self.storage.get_ref(symbolic_ref)
-            head_commit = self.storage.get_object(head_key)
+            head_commit = self.storage.resolve_symbolic_ref("HEAD")
             head = self.storage.get_object(head_commit.tree_key)
         except NitRefNotFoundError as exc:
             logger.info("Initial commit")
@@ -67,7 +66,7 @@ class NitRepository(Repository):
         diff = BaseStatusStrategy(
             head, index, working, ignorer=self.ignore.ignore
         )
-        fmt = TreeDiffFormatter()
+        fmt = GitStatusFormatter()
         status_str = fmt.format(diff)
         logger.info(status_str)
         return status_str
