@@ -13,6 +13,12 @@ class StatusStrategy(metaclass=ABCMeta):
     """
 
     @abstractproperty
+    def clean(self):
+        """
+        :return:
+        """
+
+    @abstractproperty
     def branch(self):
         """
         """
@@ -79,6 +85,18 @@ class BaseStatusStrategy(StatusStrategy):
             head, index, working,
             ignorer=ignorer,
             tree_diff_cls=tree_diff_cls
+        )
+
+    @property
+    def clean(self):
+        """
+        :return:
+        """
+        return not (
+            self.added or
+            self.modified or
+            self.removed or
+            self.untracked
         )
 
     @property

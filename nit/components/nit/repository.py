@@ -48,6 +48,10 @@ class NitRepository(Repository):
     def exists(self):
         return self.storage.exists
 
+    @property
+    def clean(self):
+        return self.status().clean
+
     def create(self, force=False):
         self.storage.create(force=force)
 
@@ -60,7 +64,7 @@ class NitRepository(Repository):
         )
         status_fmt = self._status_format_cls(status)
         logger.info(status_fmt)
-        return str(status_fmt)
+        return status
 
     def config(self, set_value=None, use_global=False):
         config = self.storage.get_config()
@@ -258,4 +262,8 @@ class NitRepository(Repository):
         raise Exception("boo")
 
     def checkout(self, treeish):
-        raise NotImplementedError("implement checkout already!")
+        assert self.clean
+        tree = self.storage.get(treeish)
+        assert isinstance(tree, Tree)
+        print(tree)
+        #raise NotImplementedError("implement checkout already!")

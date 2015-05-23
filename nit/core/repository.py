@@ -10,6 +10,12 @@ class Repository(metaclass=ABCMeta):
     def exists(self):
         pass
 
+    @abstractproperty
+    def clean(self):
+        """
+        :return:
+        """
+
     @abstractmethod
     def create(self, force):
         pass
