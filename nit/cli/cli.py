@@ -175,14 +175,12 @@ class BaseParserFactory(ParserFactory):
             action='store_true'
         )
 
-        # Sub-parser for 'status' command
-        parser_status = subparsers.add_parser("status")
-        parser_status.set_defaults(
-            func=repository.status
-        )
-
         # Sub-parser for 'config' command
-        parser_config = subparsers.add_parser("config")
+        parser_config = subparsers.add_parser(
+            "config",
+            help="read and save variables in ${REPO}/config or "
+                 "~/.nitconfig (if --global is specified)"
+        )
         parser_config.set_defaults(
             func=repository.config
         )
@@ -196,15 +194,41 @@ class BaseParserFactory(ParserFactory):
             metavar=("KEY", "VALUE")
         )
 
-        # Sub-parser for 'checkout' command
-        parser_checkout = subparsers.add_parser("checkout")
-        parser_checkout.set_defaults(
-            func=repository.checkout
+        # Sub-parser for 'status' command
+        parser_status = subparsers.add_parser(
+            "status",
+            help="report the diff between the HEAD commit, "
+                 "the index, and the working tree"
         )
-        parser_checkout.add_argument("treeish")
+        parser_status.set_defaults(
+            func=repository.status
+        )
+
+        # Sub-parser for 'cat' command
+        parser_cat = subparsers.add_parser(
+            "cat",
+            help="print the contents of an object in the database"
+        )
+        parser_cat.set_defaults(
+            func=repository.cat
+        )
+        parser_cat.add_argument("key")
+
+        # Sub-parser for 'diff' command
+        parser_cat = subparsers.add_parser(
+            "diff",
+            help="report the diff between the HEAD commit and the working tree"
+        )
+        parser_cat.set_defaults(
+            func=repository.diff
+        )
 
         # Sub-parser for 'add' command
-        parser_add = subparsers.add_parser("add")
+        parser_add = subparsers.add_parser(
+            "add",
+            help="include a file from the current working tree in the "
+                 "index (the next tree to be committed)"
+        )
         parser_add.set_defaults(
             func=repository.add
         )
@@ -214,31 +238,46 @@ class BaseParserFactory(ParserFactory):
         )
         parser_add.add_argument("files", nargs="+")
 
-        # Sub-parser for 'cat' command
-        parser_cat = subparsers.add_parser("cat")
-        parser_cat.set_defaults(
-            func=repository.cat
-        )
-        parser_cat.add_argument("key")
-
-        # Sub-parser for 'diff' command
-        parser_cat = subparsers.add_parser("diff")
-        parser_cat.set_defaults(
-            func=repository.diff
-        )
-
-        # Sub-parser for 'log' command
-        parser_log = subparsers.add_parser("log")
-        parser_log.set_defaults(
-            func=repository.log
-        )
-
         # Sub-parser for 'commit' command
-        parser_commit = subparsers.add_parser("commit")
+        parser_commit = subparsers.add_parser(
+            "commit",
+            help="save the current state of the working tree to the database"
+        )
         parser_commit.set_defaults(
             func=repository.commit
         )
         parser_commit.add_argument("-m", "--message", type=str)
+
+        # Sub-parser for 'log' command
+        parser_log = subparsers.add_parser(
+            "log",
+            help="print the HEAD commit and its ancestors"
+        )
+        parser_log.set_defaults(
+            func=repository.log
+        )
+
+        # Sub-parser for 'checkout' command
+        parser_checkout = subparsers.add_parser(
+            "checkout",
+            help="(in progress) restore the working tree to a tree in the "
+                 "repository's history"
+        )
+        parser_checkout.set_defaults(
+            func=repository.checkout
+        )
+        parser_checkout.add_argument("treeish")
+
+        for s in subparsers._get_subactions():
+            r = getattr(s, "help")
+            if not r:
+                raise NitUnexpectedError(
+                    (
+                        "Sub-command '{}' doesn't define a help message"
+                    ).format(
+                        s.dest
+                    )
+                )
 
         return parser
 
