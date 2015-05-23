@@ -4,14 +4,12 @@ import hashlib
 import io
 import os
 import shutil
-from pathlib import Path
+from nit.components.base.working_tree import BaseWorkingTree
 from nit.core.config import BaseConfigBuilder
 
 from nit.core.errors import NitUserError, NitRefNotFoundError
 from nit.core.serialization import BaseSerializer
 from nit.core.storage import Storage
-from nit.core.objects.blob import Blob
-from nit.core.objects.tree import TreeNode, Tree
 from nit.core.log import getLogger
 
 
@@ -27,11 +25,13 @@ class BaseStorage(Storage):
         self,
         paths,
         serialization_cls=BaseSerializer,
-        config_builder_cls=BaseConfigBuilder
+        config_builder_cls=BaseConfigBuilder,
+        working_tree_cls=BaseWorkingTree
     ):
         self.paths = paths
         self._serialization_cls = serialization_cls
         self._config_builder_cls = config_builder_cls
+        self._working_tree_cls = working_tree_cls
 
     @property
     def exists(self):
@@ -207,20 +207,7 @@ class BaseStorage(Storage):
             s.serialize(index)
 
     def get_working_tree(self):
-        working = Tree()
-        walk = os.walk(str(self.paths.project))
-        for base, dir_names, file_names in walk:
-            for filename in file_names:
-                p = Path(os.path.join(base, filename))
-                if p.is_file() and p.exists():
-                    p.resolve()
-                    rp = p.relative_to(self.paths.project)
-                    with p.open('rb') as file:
-                        contents = file.read()
-                        blob = Blob(contents)
-                        key = self.get_object_key_for(blob)
-                        working.add_node(TreeNode(rp, key))
-        return working
+        return self._working_tree_cls(self)
 
     def put_blob(self, blob):
         return self.put_object(blob)

@@ -6,6 +6,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 import textwrap
+from nit.components.base.working_tree import BaseWorkingTree
 from nit.components.git.status import GitStatusFormatter
 
 from nit.core.log import getLogger
@@ -32,11 +33,13 @@ class NitRepository(Repository):
         serialization_cls=NitSerializer,
         ignore_cls=NitIgnoreStrategy,
         status_cls=BaseStatusStrategy,
-        status_format_cls=GitStatusFormatter
+        status_format_cls=GitStatusFormatter,
+        working_tree_cls=BaseWorkingTree
     ):
         self.storage = storage_cls(
             paths,
-            serialization_cls=serialization_cls
+            serialization_cls=serialization_cls,
+            working_tree_cls=working_tree_cls
         )
         self.ignore = ignore_cls(
             paths
@@ -50,7 +53,7 @@ class NitRepository(Repository):
 
     @property
     def clean(self):
-        return self.status().clean
+        return self._status().clean
 
     def create(self, force=False):
         self.storage.create(force=force)
@@ -59,12 +62,15 @@ class NitRepository(Repository):
         self.storage.destroy()
 
     def status(self):
-        status = self._status_cls.from_repo(
-            self, ignorer=self.ignore.ignore
-        )
+        status = self._status()
         status_fmt = self._status_format_cls(status)
         logger.info(status_fmt)
         return status
+
+    def _status(self):
+        return self._status_cls.from_repo(
+            self, ignorer=self.ignore.ignore
+        )
 
     def config(self, set_value=None, use_global=False):
         config = self.storage.get_config()
@@ -266,4 +272,4 @@ class NitRepository(Repository):
         tree = self.storage.get(treeish)
         assert isinstance(tree, Tree)
         print(tree)
-        #raise NotImplementedError("implement checkout already!")
+        raise NotImplementedError("implement checkout already!")
