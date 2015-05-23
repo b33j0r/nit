@@ -257,5 +257,5 @@ class NitRepository(Repository):
     def diff(self):
         raise Exception("boo")
 
-    def checkout(self):
-        raise NotImplementedError("checkout")
+    def checkout(self, treeish):
+        raise NotImplementedError("implement checkout already!")

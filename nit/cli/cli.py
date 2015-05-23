@@ -70,6 +70,12 @@ class RepositoryProxy:
         self.repo.status()
 
     @map_args(
+        arg_mappings=["treeish"]
+    )
+    def checkout(self, treeish):
+        self.repo.checkout(treeish)
+
+    @map_args(
         kwarg_mappings=[
             "set_value",
             "use_global"
@@ -109,9 +115,6 @@ class RepositoryProxy:
     )
     def commit(self, message=None, **kwargs):
         self.repo.commit(message=message, **kwargs)
-
-    def checkout(self, args):
-        print("CHECKOUT was called with {}".format(args))
 
 
 class ParserFactory(metaclass=ABCMeta):
@@ -193,6 +196,13 @@ class BaseParserFactory(ParserFactory):
             metavar=("KEY", "VALUE")
         )
 
+        # Sub-parser for 'checkout' command
+        parser_checkout = subparsers.add_parser("checkout")
+        parser_checkout.set_defaults(
+            func=repository.checkout
+        )
+        parser_checkout.add_argument("treeish")
+
         # Sub-parser for 'add' command
         parser_add = subparsers.add_parser("add")
         parser_add.set_defaults(
@@ -229,12 +239,6 @@ class BaseParserFactory(ParserFactory):
             func=repository.commit
         )
         parser_commit.add_argument("-m", "--message", type=str)
-
-        # Sub-parser for 'checkout' command
-        parser_checkout = subparsers.add_parser("checkout")
-        parser_checkout.set_defaults(
-            func=repository.checkout
-        )
 
         return parser
 

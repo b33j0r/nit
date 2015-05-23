@@ -31,5 +31,8 @@ class Repository(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def checkout(self):
-        pass
+    def checkout(self, treeish):
+        """
+        :param treeish:
+        :return:
+        """
