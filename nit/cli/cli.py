@@ -9,7 +9,7 @@ from functools import wraps
 from pathlib import Path
 
 from nit.core.log import getLogger
-from nit.core.errors import NitExpectedError, NitUnexpectedError, NitUserError
+from nit.core.errors import NitExpectedError, NitUnexpectedError
 from nit.core.paths import BasePaths
 
 logger = getLogger(__name__)
@@ -22,16 +22,22 @@ def map_args(arg_mappings=None, kwarg_mappings=None):
     def map_args_decorator(fn):
 
         @wraps(fn)
-        def map_args_implementation(*unmapped_args, parsed_args=None, **kwargs):
+        def map_args_implementation(
+            *unmapped_args, parsed_args=None, **kwargs
+        ):
             args = []
             for arg_name in arg_mappings:
                 args.append(getattr(parsed_args, arg_name))
 
             for kwarg_mapping in kwarg_mappings:
                 try:
-                    parsed_kwarg_name, kwarg_name = kwarg_mapping
+                    (parsed_kwarg_name, kwarg_name) = (
+                        kwarg_mapping
+                    )
                 except ValueError:
-                    parsed_kwarg_name, kwarg_name = kwarg_mapping, kwarg_mapping
+                    (parsed_kwarg_name, kwarg_name) = (
+                        kwarg_mapping, kwarg_mapping
+                    )
                 kwargs[kwarg_name] = getattr(parsed_args, parsed_kwarg_name)
 
             args = list(unmapped_args) + args

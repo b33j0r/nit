@@ -158,9 +158,6 @@ class TestNitStorage(TestBaseStorage):
         print("content: {}".format(content))
         commit_key = self.storage.get_object_key_for_content(content)
         self.storage.put(commit)
-        commit_path = self.storage.paths.get_object_path(
-            commit_key, must_exist=True
-        )
         commit_actual = self.storage.get_object(commit_key)
         assert commit_actual.parent_key == "aaaa"
         assert commit_actual.tree_key == "bbbb"

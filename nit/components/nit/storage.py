@@ -22,4 +22,3 @@ class NitStorage(BaseStorage):
             paths,
             serialization_cls
         )
-

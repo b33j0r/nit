@@ -2,7 +2,6 @@
 """
 """
 from nit.core.log import getLogger
-from nit.core.status import StatusFormatter
 
 logger = getLogger(__name__)
 

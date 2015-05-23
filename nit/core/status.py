@@ -6,7 +6,6 @@ from abc import ABCMeta, abstractproperty, abstractmethod
 from nit.core.diff import BaseTreeDiff
 from nit.core.errors import NitRefNotFoundError
 from nit.core.objects.tree import Tree
-from nit.core.repository import Repository
 
 
 class StatusStrategy(metaclass=ABCMeta):
@@ -86,6 +85,7 @@ class BaseStatusStrategy(StatusStrategy):
     def branch(self):
         """
         """
+        raise NotImplementedError()
 
     @property
     def added(self):

@@ -6,12 +6,10 @@ from pathlib import Path
 import subprocess
 import tempfile
 import textwrap
-from io import BytesIO
 from nit.components.git.status import GitStatusFormatter
-from nit.components.nit.status import NitStatusFormatter
 
 from nit.core.log import getLogger
-from nit.core.errors import NitUserError, NitRefNotFoundError
+from nit.core.errors import NitUserError
 from nit.core.repository import Repository
 from nit.core.objects.commit import Commit
 from nit.core.objects.blob import Blob

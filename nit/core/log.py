@@ -1,15 +1,15 @@
 #! /usr/bin/env python
 """
-I had an idea to do this, and after some googling used this as a starting point:
+I had an idea to do this, and after some googling used this
+as a starting point:
 
-http://leigh.cudd.li/article/Cross_Platform_Colorized_Logger_Output_Using_Pythons_logging_Module_And_Colorama
+http://leigh.cudd.li/article/Cross_Platform_Colorized_Logger_Output_Using_\
+Pythons_logging_Module_And_Colorama
 """
 
 from logging import (
     StreamHandler,
     DEBUG,
-    WARN,
-    INFO,
     getLogger as realGetLogger,
     Formatter
 )
@@ -26,9 +26,9 @@ class ColorizedStreamHandler(StreamHandler):
     """
 
     def __init__(
-            self,
-            stream=None,
-            tty_formatter=None
+        self,
+        stream=None,
+        tty_formatter=None
     ):
         super().__init__(stream)
         self.tty_formatter = tty_formatter
@@ -262,6 +262,7 @@ def getLogger(name=None, fmt='{message}'):
     log.trace = MethodType(trace, log)
 
     _critical = log.critical
+
     def critical(self, message, **kwargs):
         import traceback
         bug_message = "{}\n\n{}".format(

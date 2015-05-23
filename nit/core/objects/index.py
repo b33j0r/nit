@@ -6,7 +6,7 @@ from nit.core.objects.tree import Tree
 
 
 class Index(Tree):
-    
+
     """
     """
 

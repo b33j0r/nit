@@ -19,8 +19,12 @@ class GitStatusFormatter(BaseStatusFormatter):
     @property
     def branch_message(self):
         branch_message = "On branch {branch}"
+        return branch_message.format(branch="master<fake>")
+
+    @property
+    def diff_message(self):
         diff_message = "Your branch is up-to-date with {!r}."
-        return branch_message.format(branch="master")
+        return diff_message.format(branch="origin/master<fake>")
 
     @property
     def staged_message(self):
@@ -147,7 +151,7 @@ no changes added to commit (use "git add" and/or "git commit -a")
     def format(self, diff):
         output = """
 {branch_message}
-{divergence_message}
+{diff_message}
 {staged_message}
 {index}
 
@@ -204,8 +208,8 @@ no changes added to commit (use "git add" and/or "git commit -a")
         tab = "\n"
 
         s = output.format(
-            branch_message=self.branch_message.format(branch="FAKE"),
-            divergence_message=self.divergence_message.format("FAKE-ORIGIN"),
+            branch_message=self.branch_message,
+            diff_message=self.diff_message,
             index=tab.join(
                 index_lines
             ),

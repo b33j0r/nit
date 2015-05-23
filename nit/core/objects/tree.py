@@ -2,7 +2,7 @@
 """
 """
 from pathlib import Path
-from nit.core.diff import TreeDiff, BaseTreeDiff
+from nit.core.diff import BaseTreeDiff
 from nit.core.log import getLogger
 from nit.core.storage import Storable
 

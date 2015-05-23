@@ -79,12 +79,10 @@ class PathspecIgnorePredicateTests(TestCase):
 
     sep = "/"
 
-    @classmethod
     def setUp(self):
         self.original_sep = os.path.sep
         os.path.sep = self.sep
 
-    @classmethod
     def tearDown(self):
         os.path.sep = self.original_sep
 
@@ -132,7 +130,8 @@ class PathspecIgnorePredicateTests(TestCase):
         )
         assert not predicate.ignore(
             os.path.sep + "fake",
-            os.path.sep + "fake" + os.path.sep + "subdir" + os.path.sep + "ignore"
+            os.path.sep + "fake" + os.path.sep + "subdir"
+            + os.path.sep + "ignore"
         )
 
     def test_no_leading_slash(self):
@@ -145,7 +144,8 @@ class PathspecIgnorePredicateTests(TestCase):
         )
         assert predicate.ignore(
             os.path.sep + "fake",
-            os.path.sep + "fake" + os.path.sep + "subdir" + os.path.sep + "ignore"
+            os.path.sep + "fake" + os.path.sep + "subdir"
+            + os.path.sep + "ignore"
         )
         assert not predicate.ignore(
             os.path.sep + "fake",
@@ -153,7 +153,8 @@ class PathspecIgnorePredicateTests(TestCase):
         )
         assert not predicate.ignore(
             os.path.sep + "fake",
-            os.path.sep + "fake" + os.path.sep + "subdir" + os.path.sep + "include"
+            os.path.sep + "fake" + os.path.sep + "subdir"
+            + os.path.sep + "include"
         )
 
     def test_single_wildcard(self):
@@ -166,7 +167,8 @@ class PathspecIgnorePredicateTests(TestCase):
         )
         assert predicate.ignore(
             os.path.sep + "fake",
-            os.path.sep + "fake" + os.path.sep + "subdir" + os.path.sep + "ignored"
+            os.path.sep + "fake" + os.path.sep + "subdir"
+            + os.path.sep + "ignored"
         )
         assert not predicate.ignore(
             os.path.sep + "fake",
@@ -174,7 +176,8 @@ class PathspecIgnorePredicateTests(TestCase):
         )
         assert not predicate.ignore(
             os.path.sep + "fake",
-            os.path.sep + "fake" + os.path.sep + "subdir" + os.path.sep + "ignore"
+            os.path.sep + "fake" + os.path.sep + "subdir"
+            + os.path.sep + "ignore"
         )
 
     def test_multi_wildcard(self):
@@ -187,7 +190,8 @@ class PathspecIgnorePredicateTests(TestCase):
         )
         assert predicate.ignore(
             os.path.sep + "fake",
-            os.path.sep + "fake" + os.path.sep + "subdir" + os.path.sep + "ignore"
+            os.path.sep + "fake" + os.path.sep + "subdir"
+            + os.path.sep + "ignore"
         )
         assert predicate.ignore(
             os.path.sep + "fake",
@@ -195,7 +199,8 @@ class PathspecIgnorePredicateTests(TestCase):
         )
         assert predicate.ignore(
             os.path.sep + "fake",
-            os.path.sep + "fake" + os.path.sep + "subdir" + os.path.sep + "ignored"
+            os.path.sep + "fake" + os.path.sep + "subdir"
+            + os.path.sep + "ignored"
         )
         assert not predicate.ignore(
             os.path.sep + "fake",
@@ -203,7 +208,8 @@ class PathspecIgnorePredicateTests(TestCase):
         )
         assert not predicate.ignore(
             os.path.sep + "fake",
-            os.path.sep + "fake" + os.path.sep + "subdir" + os.path.sep + "ignor"
+            os.path.sep + "fake" + os.path.sep + "subdir"
+            + os.path.sep + "ignor"
         )
 
     def test_leading_double_wildcard(self):
@@ -216,11 +222,13 @@ class PathspecIgnorePredicateTests(TestCase):
         )
         assert predicate.ignore(
             os.path.sep + "fake",
-            os.path.sep + "fake" + os.path.sep + "subdir" + os.path.sep + "ignore"
+            os.path.sep + "fake" + os.path.sep + "subdir"
+            + os.path.sep + "ignore"
         )
         assert predicate.ignore(
             os.path.sep + "fake",
-            os.path.sep + "fake" + os.path.sep + "subdir" + os.path.sep + "subsubdir" + os.path.sep + "ignore"
+            os.path.sep + "fake" + os.path.sep + "subdir"
+            + os.path.sep + "subsubdir" + os.path.sep + "ignore"
         )
 
     def test_double_wildcard(self):
@@ -229,15 +237,19 @@ class PathspecIgnorePredicateTests(TestCase):
         )
         assert not predicate.ignore(
             os.path.sep + "fake",
-            os.path.sep + "fake" + os.path.sep + "foo" + os.path.sep + "ignore"
+            os.path.sep + "fake" + os.path.sep + "foo"
+            + os.path.sep + "ignore"
         )
         assert not predicate.ignore(
             os.path.sep + "fake",
-            os.path.sep + "fake" + os.path.sep + "subdir" + os.path.sep + "ignore"
+            os.path.sep + "fake" + os.path.sep + "subdir"
+            + os.path.sep + "ignore"
         )
         assert predicate.ignore(
             os.path.sep + "fake",
-            os.path.sep + "fake" + os.path.sep + "foo" + os.path.sep + "subdir" + os.path.sep + "subsubdir" + os.path.sep + "ignore"
+            os.path.sep + "fake" + os.path.sep + "foo"
+            + os.path.sep + "subdir" + os.path.sep + "subsubdir"
+            + os.path.sep + "ignore"
         )
 
     def test_char_class(self):
@@ -246,15 +258,18 @@ class PathspecIgnorePredicateTests(TestCase):
         )
         assert predicate.ignore(
             os.path.sep + "fake",
-            os.path.sep + "fake" + os.path.sep + "a" + os.path.sep + "ignore"
+            os.path.sep + "fake" + os.path.sep + "a"
+            + os.path.sep + "ignore"
         )
         assert not predicate.ignore(
             os.path.sep + "fake",
-            os.path.sep + "fake" + os.path.sep + "c" + os.path.sep + "ignore"
+            os.path.sep + "fake" + os.path.sep + "c"
+            + os.path.sep + "ignore"
         )
         assert predicate.ignore(
             os.path.sep + "fake",
-            os.path.sep + "fake" + os.path.sep + "c" + os.path.sep + "b" + os.path.sep + "ignore"
+            os.path.sep + "fake" + os.path.sep + "c"
+            + os.path.sep + "b" + os.path.sep + "ignore"
         )
 
     def test_negated_char_class(self):
@@ -263,15 +278,18 @@ class PathspecIgnorePredicateTests(TestCase):
         )
         assert not predicate.ignore(
             os.path.sep + "fake",
-            os.path.sep + "fake" + os.path.sep + "a" + os.path.sep + "ignore"
+            os.path.sep + "fake" + os.path.sep + "a"
+            + os.path.sep + "ignore"
         )
         assert predicate.ignore(
             os.path.sep + "fake",
-            os.path.sep + "fake" + os.path.sep + "c" + os.path.sep + "ignore"
+            os.path.sep + "fake" + os.path.sep + "c"
+            + os.path.sep + "ignore"
         )
         assert not predicate.ignore(
             os.path.sep + "fake",
-            os.path.sep + "fake" + os.path.sep + "c" + os.path.sep + "b" + os.path.sep + "ignore"
+            os.path.sep + "fake" + os.path.sep + "c"
+            + os.path.sep + "b" + os.path.sep + "ignore"
         )
 
     def test_trailing_slash(self):

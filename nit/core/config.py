@@ -5,7 +5,7 @@ import configparser
 from pathlib import Path
 from pprint import pprint
 from _collections_abc import Mapping
-from abc import abstractmethod, abstractproperty
+from abc import abstractproperty
 
 
 class Config(Mapping):
@@ -61,7 +61,7 @@ class Config(Mapping):
         ks = self._key_set
         try:
             ks = ks.union(self._parent.key_set)
-        except AttributeError as e:
+        except AttributeError:
             pass
         return ks
 
@@ -99,7 +99,7 @@ class Config(Mapping):
 
 
 class DictConfig(Config):
-    
+
     """
     """
 

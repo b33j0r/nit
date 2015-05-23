@@ -103,5 +103,3 @@ class NitStatusFormatter(StatusFormatter):
             return "No changes detected"
 
         return s
-
-
