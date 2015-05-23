@@ -241,7 +241,8 @@ class BaseParserFactory(ParserFactory):
         # Sub-parser for 'commit' command
         parser_commit = subparsers.add_parser(
             "commit",
-            help="save the current state of the working tree to the database"
+            help="save the current state of the index to the database and link "
+                 "HEAD to the resulting object"
         )
         parser_commit.set_defaults(
             func=repository.commit
@@ -271,13 +272,9 @@ class BaseParserFactory(ParserFactory):
         for s in subparsers._get_subactions():
             r = getattr(s, "help")
             if not r:
-                raise NitUnexpectedError(
-                    (
-                        "Sub-command '{}' doesn't define a help message"
-                    ).format(
-                        s.dest
-                    )
-                )
+                msg = ("Sub-command '{}' doesn't define "
+                       "a help message").format(s.dest)
+                raise NitUnexpectedError(msg)
 
         return parser
 
