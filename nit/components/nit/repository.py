@@ -10,7 +10,7 @@ from nit.components.base.working_tree import BaseWorkingTree, BaseWorkingTreeEdi
 from nit.components.git.status import GitStatusFormatter
 
 from nit.core.log import getLogger
-from nit.core.errors import NitUserError
+from nit.core.errors import NitUserError, NitExpectedError
 from nit.core.objects.index import Index
 from nit.core.repository import Repository
 from nit.core.objects.commit import Commit
@@ -275,10 +275,11 @@ class NitRepository(Repository):
         working = BaseWorkingTreeEditor(
             self.storage, self.ignore.ignore
         )
-        if isinstance(tree, Tree):
-            print("detached head state")
-            working.replace(tree)
-        elif isinstance(tree, Commit):
+        if isinstance(tree, Index):
+            raise NitExpectedError(
+                "You can't checkout an index object."
+            )
+        if isinstance(tree, Commit):
             tree = self.storage.get(tree.tree_key)
             assert isinstance(tree, Tree)
             assert not isinstance(tree, (Index, Commit)), (
@@ -286,6 +287,9 @@ class NitRepository(Repository):
                     tree.__class__.__name__
                 )
             )
+            working.replace(tree)
+        elif isinstance(tree, Tree):
+            print("detached head state")
             working.replace(tree)
         else:
             raise NitUserError(

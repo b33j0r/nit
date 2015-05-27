@@ -16,6 +16,20 @@ from nit.core.paths import BasePaths
 logger = getLogger(__name__)
 
 
+raise NitUnexpectedError((
+    ("\n\n" + logger.Fore.RED) + (
+        "*Brian* ") + logger.Fore.GREEN +
+    (
+        "you forgot to create \n"
+        "a Treeish interface (as an ABC) \n"
+        "instead of using isinstance to \n"
+        "confuse the various treeish things \n"
+        "in nit"
+        "\n"
+    ) + logger.Fore.RESET
+))
+
+
 def map_args(arg_mappings=None, kwarg_mappings=None):
     arg_mappings = arg_mappings or []
     kwarg_mappings = kwarg_mappings or []
