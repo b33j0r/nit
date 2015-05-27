@@ -3,8 +3,11 @@
 """
 import os
 from pathlib import Path
+from nit.core.errors import NitExpectedError
 from nit.core.objects.blob import Blob
-from nit.core.objects.tree import TreeNode
+from nit.core.objects.commit import Commit
+from nit.core.objects.index import Index
+from nit.core.objects.tree import TreeNode, Tree
 
 from nit.core.working_tree import WorkingTree
 
@@ -15,8 +18,9 @@ class BaseWorkingTree(WorkingTree):
     Creates a `Tree` from the project's working directory.
     """
 
-    def __init__(self, storage):
+    def __init__(self, storage, ignore=None):
         self.storage = storage
+        self.ignore = ignore
         self.paths = self.storage.paths
 
         super().__init__(nodes=[])
@@ -50,3 +54,79 @@ class BaseWorkingTree(WorkingTree):
 
     def walk(self):
         yield from os.walk(str(self.paths.project))
+
+
+class BaseWorkingTreeEditor(BaseWorkingTree):
+
+    """
+    """
+
+    def __init__(self, storage, ignore):
+        super().__init__(storage, ignore=ignore)
+
+    def merge(self, tree):
+        """
+        """
+        raise NotImplementedError("Definitely not implemented!")
+
+    def replace(self, tree):
+        """
+        """
+        assert isinstance(tree, Tree)
+
+        assert not isinstance(tree, (Commit, Index)), (
+            "Should be a Tree, but is {}".format(
+                tree.__class__.__name__
+            )
+        )
+
+        if not self.ignore:
+            raise NitExpectedError(
+                "For safety, we don't allow this operation "
+                "if an ignore strategy is not specified"
+            )
+
+        rm_paths = []
+        cp_keys_and_paths = []
+
+        for node in self:
+            if self.ignore(node.path):
+                continue
+            print(node.path)
+            assert isinstance(node.path, Path)
+            rm_path = self.storage.paths.project/node.path
+            assert rm_path.is_absolute()
+            rm_paths.append(rm_path)
+
+        print("\nwill be replaced by:\n")
+
+        for node in tree:
+            print(node.path)
+            cp_path = self.storage.paths.project/node.path
+            assert cp_path.is_absolute()
+            self.storage.get(node.key)
+            cp_keys_and_paths.append((node.key, cp_path))
+
+        # We've been a bit more careful about planning our
+        # operations; now we do the scary part
+
+        # Delete the stuff that's here
+        for rm_path in rm_paths:
+            os.remove(str(rm_path))
+
+        # Copy objects into the working dir from the db
+        for key, cp_path in cp_keys_and_paths:
+            obj = self.storage.get(key)
+            self.storage.serialize_object_to_path(obj, cp_path)
+
+        # need to update the index
+        index = Index.from_tree(tree)
+        self.storage.put_index(index)
+
+        # need to update the refs
+        # TODO:
+        self.storage.put_ref(
+            "heads/temp",
+            self.storage.get_object_key_for(tree)
+        )
+        self.storage.put_symbolic_ref("HEAD", "heads/temp")

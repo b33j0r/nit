@@ -16,7 +16,9 @@ def read(rel_path):
 
 def read_requirements():
     return [
-        p.strip() for p in read("requirements.txt").split("\n") if p.strip()
+        p.strip() for p in read(
+            "requirements.txt"
+        ).split("\n") if p.strip()
     ]
 
 
@@ -39,6 +41,7 @@ setup(
         "License :: OSI Approved :: BSD License",
     ],
     scripts=[
-        "bin/nit"
+        "bin/nit",
+        "bin/nit-git"
     ]
 )

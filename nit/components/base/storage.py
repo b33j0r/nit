@@ -202,7 +202,7 @@ class BaseStorage(Storage):
             return None
 
     def put_index(self, index):
-        with open(self.paths.index_str, 'wb') as file:
+        with self.paths.index.open('wb') as file:
             s = self._serialization_cls(file)
             s.serialize(index)
 
@@ -241,3 +241,9 @@ class BaseStorage(Storage):
             s = self._serialization_cls(memory_file)
             s.serialize(obj)
             return memory_file.getvalue()
+
+    def serialize_object_to_path(self, obj, path):
+        b = self._serialize_object_to_bytes(obj)
+        assert path.is_absolute()
+        with path.open('wb') as f:
+            f.write(b)

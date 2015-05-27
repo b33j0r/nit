@@ -6,11 +6,12 @@ from pathlib import Path
 import subprocess
 import tempfile
 import textwrap
-from nit.components.base.working_tree import BaseWorkingTree
+from nit.components.base.working_tree import BaseWorkingTree, BaseWorkingTreeEditor
 from nit.components.git.status import GitStatusFormatter
 
 from nit.core.log import getLogger
 from nit.core.errors import NitUserError
+from nit.core.objects.index import Index
 from nit.core.repository import Repository
 from nit.core.objects.commit import Commit
 from nit.core.objects.blob import Blob
@@ -270,6 +271,26 @@ class NitRepository(Repository):
     def checkout(self, treeish):
         assert self.clean
         tree = self.storage.get(treeish)
-        assert isinstance(tree, Tree)
-        print(tree)
-        raise NotImplementedError("implement checkout already!")
+        assert isinstance(tree, (Commit, Tree))
+        working = BaseWorkingTreeEditor(
+            self.storage, self.ignore.ignore
+        )
+        if isinstance(tree, Tree):
+            print("detached head state")
+            working.replace(tree)
+        elif isinstance(tree, Commit):
+            tree = self.storage.get(tree.tree_key)
+            assert isinstance(tree, Tree)
+            assert not isinstance(tree, (Index, Commit)), (
+                "Should be a Tree, but is {}".format(
+                    tree.__class__.__name__
+                )
+            )
+            working.replace(tree)
+        else:
+            raise NitUserError(
+                "Cannot checkout"
+                "object {}, because it is a {}".format(
+                    treeish, tree.__class__.__name__
+                )
+            )

@@ -72,8 +72,21 @@ class BaseStatusStrategy(StatusStrategy):
             head_commit = repo.storage.resolve_symbolic_ref(
                 "HEAD"
             )
+            print(dir(head_commit))
             head = repo.storage.get_object(
                 head_commit.tree_key
+            )
+        except AttributeError:
+            raise AttributeError(
+                (
+                    "head_commit {} is an {}, while "
+                    "a Commit was expected"
+                ).format(
+                    repo.storage.get_symbolic_ref(
+                        "HEAD"
+                    ),
+                    head_commit.__class__.__name__
+                )
             )
         except NitRefNotFoundError:
             head = Tree()

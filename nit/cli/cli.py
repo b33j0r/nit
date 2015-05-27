@@ -12,6 +12,7 @@ from nit.core.log import getLogger
 from nit.core.errors import NitExpectedError, NitUnexpectedError
 from nit.core.paths import BasePaths
 
+
 logger = getLogger(__name__)
 
 

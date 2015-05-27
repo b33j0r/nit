@@ -22,3 +22,10 @@ class Index(Tree):
 
     def add_node(self, tree_node):
         return super().add_node(tree_node)
+
+    @classmethod
+    def from_tree(cls, tree):
+        index = cls()
+        for node in tree:
+            index.add_node(node)
+        return index
