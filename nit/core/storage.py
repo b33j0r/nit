@@ -5,6 +5,7 @@ from abc import (
     ABCMeta,
     abstractmethod,
     abstractproperty)
+from nit.core.errors import NitExpectedError
 
 from nit.core.log import getLogger
 from nit.core.serialization import Serializable
@@ -86,14 +87,18 @@ class RefStorage(ObjectStorage, metaclass=ABCMeta):
         Returns the object referenced by `refspec`
         """
         key = self.get_ref(refspec)
-        return self.get(key)
+        obj = self.get(key)
+        return obj
 
     def resolve_symbolic_ref(self, name):
         """
         Returns the object referenced by `name`
         """
         refspec = self.get_symbolic_ref(name)
-        return self.resolve_ref(refspec)
+        try:
+            return self.resolve_ref(refspec)
+        except:
+            return self.get(refspec)
 
 
 class MetadataStorage(metaclass=ABCMeta):

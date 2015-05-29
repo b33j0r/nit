@@ -29,3 +29,9 @@ class Index(Tree):
         for node in tree:
             index.add_node(node)
         return index
+
+    def to_tree(self):
+        tree = Tree()
+        for node in self:
+            tree.add_node(node)
+        return tree

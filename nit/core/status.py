@@ -6,6 +6,10 @@ from abc import ABCMeta, abstractproperty, abstractmethod
 from nit.core.diff import BaseTreeDiff
 from nit.core.errors import NitRefNotFoundError
 from nit.core.objects.tree import Tree
+from nit.core.log import getLogger
+
+
+logger = getLogger(__name__)
 
 
 class StatusStrategy(metaclass=ABCMeta):
@@ -68,14 +72,15 @@ class BaseStatusStrategy(StatusStrategy):
     def from_repo(
         cls, repo, ignorer=None, tree_diff_cls=BaseTreeDiff
     ):
+        head_commit = repo.storage.resolve_symbolic_ref(
+            "HEAD"
+        )
+        logger.debug(head_commit)
         try:
-            head_commit = repo.storage.resolve_symbolic_ref(
-                "HEAD"
-            )
-            print(dir(head_commit))
             head = repo.storage.get_object(
                 head_commit.tree_key
             )
+            logger.debug(head)
         except AttributeError:
             raise AttributeError(
                 (

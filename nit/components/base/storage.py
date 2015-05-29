@@ -143,9 +143,6 @@ class BaseStorage(Storage):
             keyish, must_exist=True
         )
 
-        if not file_path.exists() or file_path.is_dir():
-            return None
-
         with file_path.open('rb') as f:
             s = self._serialization_cls(f)
             return s.deserialize()

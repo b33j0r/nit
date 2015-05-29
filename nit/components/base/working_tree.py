@@ -4,12 +4,16 @@
 import os
 from pathlib import Path
 from nit.core.errors import NitExpectedError
+from nit.core.log import getLogger
 from nit.core.objects.blob import Blob
 from nit.core.objects.commit import Commit
 from nit.core.objects.index import Index
 from nit.core.objects.tree import TreeNode, Tree
 
 from nit.core.working_tree import WorkingTree
+
+
+logger = getLogger(__name__)
 
 
 class BaseWorkingTree(WorkingTree):
@@ -89,19 +93,22 @@ class BaseWorkingTreeEditor(BaseWorkingTree):
         rm_paths = []
         cp_keys_and_paths = []
 
+        logger.debug("Working tree:")
+
         for node in self:
             if self.ignore(node.path):
                 continue
-            print(node.path)
+            logger.debug(node.path)
             assert isinstance(node.path, Path)
             rm_path = self.storage.paths.project/node.path
             assert rm_path.is_absolute()
             rm_paths.append(rm_path)
 
-        print("\nwill be replaced by:\n")
+        logger.debug("---")
+        logger.debug("Tree being checked out:")
 
         for node in tree:
-            print(node.path)
+            logger.debug(node.path)
             cp_path = self.storage.paths.project/node.path
             assert cp_path.is_absolute()
             self.storage.get(node.key)
@@ -117,16 +124,5 @@ class BaseWorkingTreeEditor(BaseWorkingTree):
         # Copy objects into the working dir from the db
         for key, cp_path in cp_keys_and_paths:
             obj = self.storage.get(key)
-            self.storage.serialize_object_to_path(obj, cp_path)
-
-        # need to update the index
-        index = Index.from_tree(tree)
-        self.storage.put_index(index)
-
-        # need to update the refs
-        # TODO:
-        self.storage.put_ref(
-            "heads/temp",
-            self.storage.get_object_key_for(tree)
-        )
-        self.storage.put_symbolic_ref("HEAD", "heads/temp")
+            with cp_path.open('wb') as f:
+                f.write(obj.content)

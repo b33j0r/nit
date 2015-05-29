@@ -16,21 +16,15 @@ from nit.core.paths import BasePaths
 logger = getLogger(__name__)
 
 
-raise NitUnexpectedError((
-    ("\n\n" + logger.Fore.RED) + (
-        "*Brian* ") + logger.Fore.GREEN +
-    (
-        "you forgot to create \n"
-        "a Treeish interface (as an ABC) \n"
-        "instead of using isinstance to \n"
-        "confuse the various treeish things \n"
-        "in nit"
-        "\n"
-    ) + logger.Fore.RESET
-))
-
-
 def map_args(arg_mappings=None, kwarg_mappings=None):
+    """
+    Decorator for mapping the Namespace object that is returned
+    from argparse into args and kwargs for the command handler.
+
+    :param arg_mappings:
+    :param kwarg_mappings:
+    :return:
+    """
     arg_mappings = arg_mappings or []
     kwarg_mappings = kwarg_mappings or []
 
@@ -311,6 +305,7 @@ def run(args):
     except NitExpectedError as exc:
         status_code = 1
         logger.error(str(exc))
+        logger.exception("Expected Error")
 
     except NitUnexpectedError as exc:
         status_code = 2

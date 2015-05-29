@@ -259,7 +259,7 @@ class BasePaths(Paths):
         """
         canonical_path = self.get_canonical_object_path(keyish)
 
-        if canonical_path.exists():
+        if canonical_path.exists() and not canonical_path.is_dir():
             return canonical_path
 
         search_result = self.find_object_paths_matching(keyish)
@@ -295,7 +295,10 @@ class BasePaths(Paths):
 
     def iter_object_paths_matching(self, keyish):
         assert keyish
-        return self.objects.glob(keyish + "*")
+        return (
+            p for p in self.objects.glob(keyish + "*")
+            if not p.is_dir()
+        )
 
     def find_object_paths_matching(self, keyish):
         return list(

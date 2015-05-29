@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 """
 """
+from abc import abstractproperty, abstractmethod
 from pathlib import Path
 from nit.core.diff import BaseTreeDiff
 from nit.core.log import getLogger
@@ -39,7 +40,20 @@ class TreeNode:
         return str(self.path) < str(other.path)
 
 
-class Tree(Storable):
+class Treeish(Storable):
+    """
+    """
+    @abstractproperty
+    def nodes_sorted(self):
+        """
+        """
+
+    @abstractmethod
+    def __iter__(self):
+        pass
+
+
+class Tree(Treeish):
     """
     """
 
@@ -56,7 +70,7 @@ class Tree(Storable):
             "\n".join(
                 "    {} {}".format(
                     n.key, n.path
-                ) for n in self.nodes
+                ) for n in self.nodes_sorted
             )
         )
 
@@ -71,7 +85,7 @@ class Tree(Storable):
         return deserializer.deserialize_tree(cls)
 
     @property
-    def nodes(self):
+    def nodes_sorted(self):
         return sorted(
             iter(self),
             key=lambda node: str(node.path)

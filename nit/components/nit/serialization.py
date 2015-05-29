@@ -92,7 +92,7 @@ class NitSerializer(BaseSerializer):
         with BytesIO() as memory_file:
             memory_serializer = self.__class__(memory_file)
 
-            for node in tree.nodes:
+            for node in tree.nodes_sorted:
                 memory_serializer.write_string(
                     node.key + self.FIELD_SEP_STR
                 )

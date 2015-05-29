@@ -10,7 +10,7 @@ from nit.components.base.working_tree import BaseWorkingTree, BaseWorkingTreeEdi
 from nit.components.git.status import GitStatusFormatter
 
 from nit.core.log import getLogger
-from nit.core.errors import NitUserError, NitExpectedError
+from nit.core.errors import NitUserError, NitExpectedError, NitUnexpectedError
 from nit.core.objects.index import Index
 from nit.core.repository import Repository
 from nit.core.objects.commit import Commit
@@ -165,7 +165,7 @@ class NitRepository(Repository):
 
     def cat(self, key):
         obj = self.storage.get_object(key)
-        return str(obj)
+        return logger.Fore.GREEN + obj.__class__.__name__ + "\n" + logger.Fore.RESET + str(obj)
 
     def _format_commit(self, key, commit):
         message = self._reformat_message(
@@ -218,8 +218,13 @@ class NitRepository(Repository):
         if not index:
             raise NitUserError("Nothing to commit!")
         parent_key = self._get_head_commit_key()
-        parent_commit = self.storage.get_object(parent_key)
-        tree_key = self.storage.put_tree(index)
+        if parent_key:
+            parent_commit = self.storage.get_object(parent_key)
+        else:
+            parent_commit = None
+
+        index_tree = index.to_tree()
+        tree_key = self.storage.put_tree(index_tree)
         if parent_commit and tree_key == parent_commit.tree_key:
             raise NitUserError("The tree to be committed "
                                "is identical to the parent.")
@@ -236,6 +241,8 @@ class NitRepository(Repository):
         )
 
         commit_key = self.storage.put(commit_obj)
+        if not commit_key:
+            raise NitUnexpectedError("No key for commit_obj")
         self.storage.put_ref("heads/master", commit_key)
         self.storage.put_symbolic_ref("HEAD", "heads/master")
 
@@ -269,32 +276,45 @@ class NitRepository(Repository):
         raise Exception("boo")
 
     def checkout(self, treeish):
-        assert self.clean
-        tree = self.storage.get(treeish)
-        assert isinstance(tree, (Commit, Tree))
+        if not self.clean:
+            raise NitUserError(
+                "The working tree has modifications!"
+            )
+
+        # TODO: use regex
+        try:
+            ref = "heads/"+treeish
+            treeish_obj = self.storage.resolve_ref(ref)
+        except:  # TODO: catch actual exceptions
+            ref = treeish
+            treeish_obj = self.storage.get(treeish)
+
+        logger.debug("treeish_obj: {}".format(treeish_obj))
+        assert isinstance(treeish_obj, (Commit, Tree))
         working = BaseWorkingTreeEditor(
             self.storage, self.ignore.ignore
         )
-        if isinstance(tree, Index):
-            raise NitExpectedError(
-                "You can't checkout an index object."
-            )
-        if isinstance(tree, Commit):
-            tree = self.storage.get(tree.tree_key)
+
+        if isinstance(treeish_obj, Commit):
+            commit = treeish_obj
+            tree = self.storage.get(commit.tree_key)
             assert isinstance(tree, Tree)
-            assert not isinstance(tree, (Index, Commit)), (
-                "Should be a Tree, but is {}".format(
-                    tree.__class__.__name__
-                )
-            )
-            working.replace(tree)
-        elif isinstance(tree, Tree):
-            print("detached head state")
             working.replace(tree)
         else:
             raise NitUserError(
-                "Cannot checkout"
-                "object {}, because it is a {}".format(
-                    treeish, tree.__class__.__name__
+                (
+                    "Cannot checkout '{}' "
+                    "because it is a {}"
+                ).format(
+                    treeish, treeish_obj.__class__.__name__
                 )
             )
+
+        # need to update the index
+        index = Index.from_tree(tree)
+        self.storage.put_index(index)
+
+        self.storage.put_symbolic_ref("HEAD", ref)
+
+        if ref == treeish:
+            logger.warn("You are in a detached HEAD state")
