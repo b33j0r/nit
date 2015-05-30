@@ -246,6 +246,31 @@ class NitRepository(Repository):
         ref = self.storage.put_ref(self.get_current_branch(), commit_key)
         self.storage.put_symbolic_ref("HEAD", ref)
 
+    def branch(self, name=None):
+        if name is None:
+            self._show_branches()
+        else:
+            self._create_branch(name)
+
+    def _show_branches(self):
+        reset_color = logger.Fore.RESET
+        current_branch = self.get_current_branch()
+        for branch in self.get_current_branches():
+            is_current = current_branch == branch
+            star = "* " if is_current else "  "
+            color = logger.Fore.GREEN if is_current else ""
+            logger.info((
+                "{star}{color}"
+                "{branch}{reset_color}"
+            ).format(
+                **locals()
+            ))
+
+    def get_current_branches(self):
+        return sorted([
+            self.get_current_branch()
+        ])
+
     def get_current_branch(self):
         return "master"
 
@@ -323,3 +348,11 @@ class NitRepository(Repository):
             self.storage.put_symbolic_ref("HEAD", ref)
         else:
             self.storage.put_symbolic_ref("HEAD", ref)
+
+    def _create_branch(self, name):
+        raise NotImplementedError(
+            ("Sorry, couldn't create branch '{}' "
+             "because _create_branch is not implemented").format(
+                name
+            )
+        )
