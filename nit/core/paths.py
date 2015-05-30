@@ -85,7 +85,7 @@ class BasePaths(Paths):
                     "a Path object, see docstring"
                 )
             return str(attr)
-        raise AttributeError()
+        raise AttributeError(name)
 
     @property
     def global_config_name(self):
@@ -305,5 +305,16 @@ class BasePaths(Paths):
             self.iter_object_paths_matching(keyish)
         )
 
-    def get_ref_path(self, ref):
-        return self.refs/Path(ref)
+    def get_ref_relative_path(self, name):
+        parts = name.split("/")
+        if len(parts) == 1:
+            parts = ["heads"] + parts
+        if len(parts) == 2:
+            parts = ["refs"] + parts
+        assert len(parts) <= 3
+        return Path(*parts)
+
+    def get_ref_path(self, name):
+        relative_path = self.get_ref_relative_path(name)
+        return self.repo/relative_path
+

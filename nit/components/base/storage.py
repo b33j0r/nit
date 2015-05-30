@@ -117,11 +117,13 @@ class BaseStorage(Storage):
             return b.decode()
 
     def put_ref(self, ref, key):
+        relative_ref_path = self.paths.get_ref_relative_path(ref)
         ref_path = self.paths.get_ref_path(ref)
         os.makedirs(str(ref_path.parent), exist_ok=True)
         with ref_path.open('wb') as file:
             b = key.encode()
             file.write(b)
+        return str(relative_ref_path)
 
     def get_symbolic_ref(self, name):
         ref_path = self.paths.repo/name
@@ -240,7 +242,7 @@ class BaseStorage(Storage):
             return memory_file.getvalue()
 
     def serialize_object_to_path(self, obj, path):
-        b = self._serialize_object_to_bytes(obj)
         assert path.is_absolute()
+        b = self._serialize_object_to_bytes(obj)
         with path.open('wb') as f:
             f.write(b)

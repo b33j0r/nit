@@ -10,7 +10,7 @@ from nit.components.base.working_tree import BaseWorkingTree, BaseWorkingTreeEdi
 from nit.components.git.status import GitStatusFormatter
 
 from nit.core.log import getLogger
-from nit.core.errors import NitUserError, NitExpectedError, NitUnexpectedError
+from nit.core.errors import NitUserError, NitExpectedError, NitUnexpectedError, NitRefNotFoundError
 from nit.core.objects.index import Index
 from nit.core.repository import Repository
 from nit.core.objects.commit import Commit
@@ -243,8 +243,8 @@ class NitRepository(Repository):
         commit_key = self.storage.put(commit_obj)
         if not commit_key:
             raise NitUnexpectedError("No key for commit_obj")
-        self.storage.put_ref("heads/master", commit_key)
-        self.storage.put_symbolic_ref("HEAD", "heads/master")
+        ref = self.storage.put_ref("master", commit_key)
+        self.storage.put_symbolic_ref("HEAD", ref)
 
     def _get_editor_command(self, temp_file_path):
         editor = os.environ.get("EDITOR", "vi")
@@ -281,11 +281,12 @@ class NitRepository(Repository):
                 "The working tree has modifications!"
             )
 
-        # TODO: use regex
         try:
-            ref = "heads/"+treeish
-            treeish_obj = self.storage.resolve_ref(ref)
-        except:  # TODO: catch actual exceptions
+            detached = False
+            ref = treeish
+            treeish_obj = self.storage.resolve_ref(treeish)
+        except NitRefNotFoundError:
+            detached = True
             ref = treeish
             treeish_obj = self.storage.get(treeish)
 
@@ -314,7 +315,8 @@ class NitRepository(Repository):
         index = Index.from_tree(tree)
         self.storage.put_index(index)
 
-        self.storage.put_symbolic_ref("HEAD", ref)
-
-        if ref == treeish:
+        if detached:
             logger.warn("You are in a detached HEAD state")
+            self.storage.put_symbolic_ref("HEAD", ref)
+        else:
+            self.storage.put_symbolic_ref("HEAD", ref)
