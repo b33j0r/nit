@@ -243,8 +243,11 @@ class NitRepository(Repository):
         commit_key = self.storage.put(commit_obj)
         if not commit_key:
             raise NitUnexpectedError("No key for commit_obj")
-        ref = self.storage.put_ref("master", commit_key)
+        ref = self.storage.put_ref(self.get_current_branch(), commit_key)
         self.storage.put_symbolic_ref("HEAD", ref)
+
+    def get_current_branch(self):
+        return "master"
 
     def _get_editor_command(self, temp_file_path):
         editor = os.environ.get("EDITOR", "vi")

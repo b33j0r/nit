@@ -23,7 +23,7 @@ class GitStatusFormatter(BaseStatusFormatter):
 
     @property
     def diff_message(self):
-        diff_message = "Your branch is up-to-date with {!r}."
+        diff_message = "Your branch is up-to-date with {branch:!r}."
         return diff_message.format(branch="origin/master<fake>")
 
     @property
@@ -134,7 +134,11 @@ Untracked files:
     def footer_message(self):
         return """
 no changes added to commit (use "git add" and/or "git commit -a")
-""".strip()
+""".strip() if not (
+            self.status.added or
+            self.status.removed or
+            self.status.modified
+        ) else ""
 
     def format_node(
             self, node,
