@@ -252,6 +252,12 @@ class NitRepository(Repository):
         else:
             self._create_branch(name)
 
+    def _create_branch(self, name, key=None):
+        if key is None:
+            key = self._get_head_commit_key()
+        ref = self.storage.put_ref(name, key)
+        #self.storage.put_symbolic_ref("HEAD", ref)
+
     def _show_branches(self):
         reset_color = logger.Fore.RESET
         current_branch = self.get_current_branch()
@@ -267,12 +273,18 @@ class NitRepository(Repository):
             ))
 
     def get_current_branches(self):
+        # TODO: refactor to use paths better
+        heads_dir = self.storage.paths.refs/"heads"
+        assert isinstance(heads_dir, Path)
+        assert heads_dir.is_dir()
         return sorted([
-            self.get_current_branch()
+            str(b.parts[-1])
+            for b in heads_dir.glob("*")
         ])
 
     def get_current_branch(self):
-        return "master"
+        ref_path = self.storage.get_symbolic_ref("HEAD")
+        return Path(ref_path).parts[-1]
 
     def _get_editor_command(self, temp_file_path):
         editor = os.environ.get("EDITOR", "vi")
@@ -295,8 +307,14 @@ class NitRepository(Repository):
     def _get_head_commit_key(self):
         try:
             branch_ref = self.storage.get_symbolic_ref("HEAD")
+            try:
+                # Check for detached head
+                self.storage.get_object(branch_ref)
+                return branch_ref
+            except:
+                pass
             head_key = self.storage.get_ref(branch_ref)
-        except:
+        except NitRefNotFoundError:
             head_key = ""
         return head_key
 
@@ -348,11 +366,3 @@ class NitRepository(Repository):
             self.storage.put_symbolic_ref("HEAD", ref)
         else:
             self.storage.put_symbolic_ref("HEAD", ref)
-
-    def _create_branch(self, name):
-        raise NotImplementedError(
-            ("Sorry, couldn't create branch '{}' "
-             "because _create_branch is not implemented").format(
-                name
-            )
-        )

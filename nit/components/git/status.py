@@ -19,12 +19,12 @@ class GitStatusFormatter(BaseStatusFormatter):
     @property
     def branch_message(self):
         branch_message = "On branch {branch}"
-        return branch_message.format(branch="master<fake>")
+        return branch_message.format(branch=self.status.current_branch)
 
     @property
     def diff_message(self):
         diff_message = "Your branch is up-to-date with {branch:!r}."
-        return diff_message.format(branch="origin/master<fake>")
+        return diff_message.format(branch=self.status.current_branch)
 
     @property
     def staged_message(self):
