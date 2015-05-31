@@ -47,7 +47,7 @@ class BasePaths(Paths):
             current_working_dir_path
         )
 
-        # Due dilligence
+        # Due diligence
         if verify:
             if not self.current_working_dir.exists():
                 raise NitUserError(
@@ -253,7 +253,6 @@ class BasePaths(Paths):
 
     def get_object_path(self, keyish, must_exist=True):
         """
-
         :param must_exist:
         :return:
         """

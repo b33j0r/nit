@@ -59,11 +59,11 @@ class BaseStatusStrategy(StatusStrategy):
 
     def __init__(
         self, head, index, working,
-        ignorer=None,
+        ignorer=None, current_branch=None,
         tree_diff_cls=BaseTreeDiff
     ):
         self._ignorer = ignorer or (lambda n: False)
-
+        self.current_branch = current_branch
         self.head_index = tree_diff_cls(head, index)
         self.head_working = tree_diff_cls(head, working)
         self.index_working = tree_diff_cls(index, working)
@@ -99,9 +99,12 @@ class BaseStatusStrategy(StatusStrategy):
         index = repo.storage.get_index()
         working = repo.storage.get_working_tree()
 
+        current_branch = repo.get_current_branch()
+
         return cls(
             head, index, working,
             ignorer=ignorer,
+            current_branch=current_branch,
             tree_diff_cls=tree_diff_cls
         )
 

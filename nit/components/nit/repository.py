@@ -246,8 +246,45 @@ class NitRepository(Repository):
         ref = self.storage.put_ref(self.get_current_branch(), commit_key)
         self.storage.put_symbolic_ref("HEAD", ref)
 
+    def branch(self, name=None):
+        if name is None:
+            self._show_branches()
+        else:
+            self._create_branch(name)
+
+    def _create_branch(self, name, key=None):
+        if key is None:
+            key = self._get_head_commit_key()
+        ref = self.storage.put_ref(name, key)
+        #self.storage.put_symbolic_ref("HEAD", ref)
+
+    def _show_branches(self):
+        reset_color = logger.Fore.RESET
+        current_branch = self.get_current_branch()
+        for branch in self.get_current_branches():
+            is_current = current_branch == branch
+            star = "* " if is_current else "  "
+            color = logger.Fore.GREEN if is_current else ""
+            logger.info((
+                "{star}{color}"
+                "{branch}{reset_color}"
+            ).format(
+                **locals()
+            ))
+
+    def get_current_branches(self):
+        # TODO: refactor to use paths better
+        heads_dir = self.storage.paths.refs/"heads"
+        assert isinstance(heads_dir, Path)
+        assert heads_dir.is_dir()
+        return sorted([
+            str(b.parts[-1])
+            for b in heads_dir.glob("*")
+        ])
+
     def get_current_branch(self):
-        return "master"
+        ref_path = self.storage.get_symbolic_ref("HEAD")
+        return Path(ref_path).parts[-1]
 
     def _get_editor_command(self, temp_file_path):
         editor = os.environ.get("EDITOR", "vi")
@@ -270,8 +307,14 @@ class NitRepository(Repository):
     def _get_head_commit_key(self):
         try:
             branch_ref = self.storage.get_symbolic_ref("HEAD")
+            try:
+                # Check for detached head
+                self.storage.get_object(branch_ref)
+                return branch_ref
+            except:
+                pass
             head_key = self.storage.get_ref(branch_ref)
-        except:
+        except NitRefNotFoundError:
             head_key = ""
         return head_key
 

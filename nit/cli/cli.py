@@ -94,6 +94,14 @@ class RepositoryProxy:
         self.repo.config(set_value=set_value, use_global=use_global)
 
     @map_args(
+        kwarg_mappings=[
+            "name"
+        ]
+    )
+    def branch(self, name=None):
+        self.repo.branch(name=name)
+
+    @map_args(
         arg_mappings=["files"],
         kwarg_mappings=["force"]
     )
@@ -230,6 +238,19 @@ class BaseParserFactory(ParserFactory):
         )
         parser_cat.set_defaults(
             func=repository.diff
+        )
+
+        # Sub-parser for 'branch' command
+        parser_branch = subparsers.add_parser(
+            "branch",
+            help="get the current branch or create a new one"
+        )
+        parser_branch.set_defaults(
+            func=repository.branch
+        )
+        parser_branch.add_argument(
+            "name", nargs="?",
+            metavar="NAME"
         )
 
         # Sub-parser for 'add' command
