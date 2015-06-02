@@ -60,7 +60,8 @@ def map_args(arg_mappings=None, kwarg_mappings=None):
 
 class RepositoryProxy:
     """
-
+    Adapts the output of the argparse parser to method
+    calls on an actual Repository implementation object.
     """
 
     def __init__(self, repo):
@@ -137,6 +138,7 @@ class RepositoryProxy:
 class ParserFactory(metaclass=ABCMeta):
 
     """
+    Builds an argparse parser for a nit cli.
     """
 
     def build_parser(self, repository, **kwargs):
@@ -146,6 +148,11 @@ class ParserFactory(metaclass=ABCMeta):
 class BaseParserFactory(ParserFactory):
 
     """
+    Builds an argparse parser for a nit cli.
+
+    Rather than building the parser at the file scope,
+    we use a factory to allow the parsing strategy to
+    be changed easily.
     """
 
     DEFAULT_DESCRIPTION = """
@@ -359,6 +366,7 @@ def setup(args, name):
         )
     )
 
+    # TODO: refactor this into a RepositoryFactory pattern
     from nit.components.nit.repository import NitRepository
 
     cwd = Path(os.getcwd())
@@ -367,6 +375,7 @@ def setup(args, name):
     repo = RepositoryProxy(nit_repo)
     parser_factory = BaseParserFactory()
     parser = parser_factory.build_parser(repo)
+
     args = parser.parse_args(args)
     return args
 

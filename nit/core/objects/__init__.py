@@ -1,6 +1,14 @@
 #! /usr/bin/env python
 """
-"""
+This package defines the fundamental objects used
+by nit:
 
-if __name__ == "__main__":
-    pass
+    Blob
+        Stores binary data (files)
+    Tree
+        Stores trees (directories)
+    Commit
+        Stores a snapshot of a tree
+    Index
+        Stores information about the working tree
+"""

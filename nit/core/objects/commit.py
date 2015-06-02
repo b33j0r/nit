@@ -7,6 +7,16 @@ from nit.core.storage import Storable
 
 class Commit(Storable):
     """
+    Stores a snapshot of the tracked files in the working
+    tree at a particular time, along with metadata like
+    the time of creation, the author, and a user-specified
+    log message.
+
+    The most important piece of information in a commit is
+    a reference to a tree which represents the working
+    directory at the time the commit was made. This tree
+    can be used to reconstruct that state of the working
+    directory.
     """
 
     def __init__(

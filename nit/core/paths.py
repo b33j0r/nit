@@ -6,7 +6,7 @@ import abc
 from os.path import expanduser
 from pathlib import Path
 
-from nit.core.errors import NitUserError
+from nit.core.errors import NitUserError, NitObjectNotFoundError
 from nit.core.log import getLogger
 
 
@@ -281,11 +281,11 @@ class BasePaths(Paths):
                               for s in search_result)
                 )
             )
-            raise NitUserError(
+            raise NitObjectNotFoundError(
                 "Multiple objects matching '{}'".format(keyish)
             )
 
-        raise NitUserError(
+        raise NitObjectNotFoundError(
             "No object matching '{}'".format(keyish)
         )
 

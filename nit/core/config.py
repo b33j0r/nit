@@ -11,6 +11,17 @@ from abc import abstractproperty
 class Config(Mapping):
 
     """
+    A key-value storage which stores metadata about the
+    repository, or the user's settings in the global or
+    per-repository scope.
+
+    git users will recognize this as the ~/.gitconfig file
+    or the .git/config file, which can be read and written
+    using the ``git config`` command.
+
+    This is the abstract base class for all classes which
+    handle this, including storing settings in INI-like
+    files.
     """
 
     def __init__(self, parent=None):

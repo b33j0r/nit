@@ -55,6 +55,9 @@ class Treeish(Storable):
 
 class Tree(Treeish):
     """
+    Stores a tree of objects, particularly Blobs and
+    child Trees. This almost always represents a sub-directory
+    as part of a Commit.
     """
 
     Node = TreeNode

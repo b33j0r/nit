@@ -12,6 +12,8 @@ logger = getLogger(__name__)
 class TreeDiff(metaclass=ABCMeta):
 
     """
+    Finds the differences between two trees. (Abstract
+    base class.)
     """
 
     @abstractproperty
@@ -53,6 +55,10 @@ class TreeDiff(metaclass=ABCMeta):
 
 
 class BaseTreeDiff(TreeDiff):
+
+    """
+    Finds the differences between two trees.
+    """
 
     def __init__(
             self,

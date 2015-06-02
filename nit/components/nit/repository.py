@@ -25,8 +25,10 @@ logger = getLogger(__name__)
 
 
 class NitRepository(Repository):
+
     """
     """
+
     def __init__(
         self,
         paths,
@@ -311,7 +313,7 @@ class NitRepository(Repository):
                 # Check for detached head
                 self.storage.get_object(branch_ref)
                 return branch_ref
-            except:
+            except NitExpectedError:
                 pass
             head_key = self.storage.get_ref(branch_ref)
         except NitRefNotFoundError:
