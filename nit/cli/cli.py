@@ -67,11 +67,9 @@ class RepositoryProxy:
     def __init__(self, repo):
         self.repo = repo
 
-    @map_args(
-        kwarg_mappings=["force"]
-    )
-    def init(self, force=None):
-        self.repo.create(force=force)
+    @map_args()
+    def init(self):
+        self.repo.create()
 
     @map_args(
         kwarg_mappings=[]
@@ -193,10 +191,6 @@ class BaseParserFactory(ParserFactory):
         )
         parser_init.set_defaults(
             func=repository.init
-        )
-        parser_init.add_argument(
-            '--force',
-            action='store_true'
         )
 
         # Sub-parser for 'config' command

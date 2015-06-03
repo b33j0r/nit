@@ -25,7 +25,15 @@ class BaseStatusFormatter:
 
     @property
     def branch_message(self):
-        return "You are in a branch"
+        return "You are in a branch\n"
+
+    @property
+    def commit_message(self):
+        return (
+            "Initial commit\n"
+            if self.status.head_commit is None
+            else ""
+        )
 
     @property
     def staged_message(self):
@@ -49,6 +57,7 @@ class BaseStatusFormatter:
             p for p in [
                 self.header_message,
                 self.branch_message,
+                self.commit_message,
                 self.staged_message,
                 self.unstaged_message,
                 self.untracked_message,

@@ -4,7 +4,8 @@
 from abc import ABCMeta, abstractproperty, abstractmethod
 
 from nit.core.diff import BaseTreeDiff
-from nit.core.errors import NitRefNotFoundError
+from nit.core.errors import NitRefNotFoundError, \
+    NitObjectNotFoundError
 from nit.core.objects.tree import Tree
 from nit.core.log import getLogger
 
@@ -60,40 +61,33 @@ class BaseStatusStrategy(StatusStrategy):
     def __init__(
         self, head, index, working,
         ignorer=None, current_branch=None,
-        tree_diff_cls=BaseTreeDiff
+        tree_diff_cls=BaseTreeDiff,
+        head_commit=None
     ):
         self._ignorer = ignorer or (lambda n: False)
         self.current_branch = current_branch
         self.head_index = tree_diff_cls(head, index)
         self.head_working = tree_diff_cls(head, working)
         self.index_working = tree_diff_cls(index, working)
+        self.head_commit = head_commit
 
     @classmethod
     def from_repo(
         cls, repo, ignorer=None, tree_diff_cls=BaseTreeDiff
     ):
-        head_commit = repo.storage.resolve_symbolic_ref(
-            "HEAD"
-        )
-        logger.debug(head_commit)
         try:
+            head_commit = repo.storage.resolve_symbolic_ref(
+                "HEAD"
+            )
+        except NitObjectNotFoundError:
+            head_commit = None
+
+        try:
+            head_tree_key = head_commit.tree_key
             head = repo.storage.get_object(
-                head_commit.tree_key
+                head_tree_key
             )
-            logger.debug(head)
         except AttributeError:
-            raise AttributeError(
-                (
-                    "head_commit {} is an {}, while "
-                    "a Commit was expected"
-                ).format(
-                    repo.storage.get_symbolic_ref(
-                        "HEAD"
-                    ),
-                    head_commit.__class__.__name__
-                )
-            )
-        except NitRefNotFoundError:
             head = Tree()
 
         index = repo.storage.get_index()
@@ -105,7 +99,8 @@ class BaseStatusStrategy(StatusStrategy):
             head, index, working,
             ignorer=ignorer,
             current_branch=current_branch,
-            tree_diff_cls=tree_diff_cls
+            tree_diff_cls=tree_diff_cls,
+            head_commit=head_commit
         )
 
     @property

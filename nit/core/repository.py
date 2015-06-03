@@ -26,60 +26,37 @@ class Repository(metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def create(self, force):
+    def create(self):
         """
-        :param force (bool): Probably dangerous! If true,
-                             creates a fresh repository.
-                             Depending on the implementation,
-                             you may lose your data!
-
-                             This behavior was introduced for
-                             iterative testing in the beginning
-                             of development, and will be
-                             removed at some point.
-
-                             Git, for instance, does not delete
-                             your data, but forces you to
-                             `rm -rf .git`
-        :return:
-        """
-
-    @abstractmethod
-    def destroy(self):
-        """
-        DANGEROUS! Destroys the existing repository and all
-        of its objects.
-
-        This behavior was introduced for iterative testing
-        in the beginning of development, and will be
-        removed at some point.
-
-        Git, for instance, does not delete your data, but
-        forces you to `rm -rf .git`
-
-        :return:
+        :return (bool): True if the repository was created,
+                        False if it was reinitialized.
         """
 
     @abstractmethod
     def status(self):
         """
-        TODO
+        Reports the status of the local repository by
+        taking diffs between the working tree, index,
+        and HEAD commit.
 
-        :return:
+        :return (Status):
         """
 
     @abstractmethod
     def add(self, relative_file_path):
         """
-        TODO
+        Adds a file to the database and records it in the
+        index.
 
         :return:
         """
 
     @abstractmethod
-    def commit(self):
+    def commit(self, message=None):
         """
-        TODO
+        Saves the current index as a Commit object in the
+        database and updates HEAD to point to it (usually
+        via a branch under refs/heads)
 
         :return:
         """
@@ -87,8 +64,11 @@ class Repository(metaclass=ABCMeta):
     @abstractmethod
     def checkout(self, treeish):
         """
-        TODO
+        Takes a diff between the current index and the
+        index that the given treeish would have, and makes
+        the necessary changes to make the working directory
+        match.
 
-        :param treeish:
+        :param treeish: currently, a branch or a commit id
         :return:
         """
