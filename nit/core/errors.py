@@ -28,6 +28,11 @@ class NitUserError(NitExpectedError):
     """
 
 
+class NitObjectNotFoundError(NitExpectedError):
+    """
+    """
+
+
 class NitRefNotFoundError(NitExpectedError):
     """
     """

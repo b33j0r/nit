@@ -37,61 +37,42 @@ class BaseStorage(Storage):
     def exists(self):
         return self.paths.repo.exists()
 
+    def _mkdir(self, path):
+        try:
+            path.mkdir()
+        except FileExistsError:
+            assert path.is_dir()
+
     def create(self, force=False):
         """
         Initialize the repository within the project directory
 
         :param force: Delete existing repository first, if found
         """
-        self._create_verify_repo_dir(force)
-        self._create_dir_structure()
+        new = not self.exists
+        self._mkdir(self.paths.repo)
+        self._mkdir(self.paths.objects)
+        self._mkdir(self.paths.refs)
+        self._mkdir(self.paths.refs/"heads")
+        self._mkdir(self.paths.refs/"tags")
+        try:
+            self.get_symbolic_ref("HEAD")
+        except NitRefNotFoundError:
+            self.put_symbolic_ref("HEAD", "refs/heads/master")
+
         logger.info(
             (
-                "Initialized empty {repository_name} "
+                "{} {repository_name} "
                 "repository in {repository_path}"
             ).format(
+                ("Initialized empty"
+                 if new else
+                 "Reinitialized existing"),
                 repository_name=self.__class__.__name__.replace(
                     "Storage", ""
                 ),
                 repository_path=self.paths.repo
             )
-        )
-
-    def _create_verify_repo_dir(self, force):
-        if not self.exists:
-            return
-        if force:
-            self.destroy()
-        else:
-            raise NitUserError(
-                "'{}' already exists!".format(
-                    self.paths.repo
-                )
-            )
-
-    def _create_dir_structure(self):
-        self.paths.repo.mkdir()
-        self.paths.refs.mkdir()
-        self.paths.objects.mkdir()
-
-    def destroy(self, ignore_errors=True):
-        """
-
-        :param ignore_errors:
-        :return:
-        """
-        logger.debug(
-            ("Destroying {repository_name} "
-             "repository in {repository_path}").format(
-                repository_name=self.__class__.__name__.replace(
-                    "Storage", ""
-                ),
-                repository_path=self.paths.repo
-            )
-        )
-        shutil.rmtree(
-            self.paths.repo_str,
-            ignore_errors=ignore_errors
         )
 
     def get_config(self):

@@ -136,7 +136,3 @@ class Storage(RefStorage, MetadataStorage, metaclass=ABCMeta):
     @abstractmethod
     def create(self, force=False):
         pass
-
-    @abstractmethod
-    def destroy(self, ignore_errors=True):
-        pass

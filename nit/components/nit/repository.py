@@ -25,8 +25,10 @@ logger = getLogger(__name__)
 
 
 class NitRepository(Repository):
+
     """
     """
+
     def __init__(
         self,
         paths,
@@ -56,11 +58,8 @@ class NitRepository(Repository):
     def clean(self):
         return self._status().clean
 
-    def create(self, force=False):
-        self.storage.create(force=force)
-
-    def destroy(self):
-        self.storage.destroy()
+    def create(self):
+        self.storage.create()
 
     def status(self):
         status = self._status()
@@ -208,7 +207,7 @@ class NitRepository(Repository):
                 )
         return []
 
-    def commit(self, message=""):
+    def commit(self, message=None):
         config = self.storage.get_config()
         author_str = "{} <{}>".format(
             config["user.name"],
@@ -228,6 +227,7 @@ class NitRepository(Repository):
         if parent_commit and tree_key == parent_commit.tree_key:
             raise NitUserError("The tree to be committed "
                                "is identical to the parent.")
+
         if not message:
             message = self._get_commit_message_with_editor()
         if not message:
@@ -256,7 +256,7 @@ class NitRepository(Repository):
         if key is None:
             key = self._get_head_commit_key()
         ref = self.storage.put_ref(name, key)
-        #self.storage.put_symbolic_ref("HEAD", ref)
+        # self.storage.put_symbolic_ref("HEAD", ref)
 
     def _show_branches(self):
         reset_color = logger.Fore.RESET
@@ -283,8 +283,11 @@ class NitRepository(Repository):
         ])
 
     def get_current_branch(self):
-        ref_path = self.storage.get_symbolic_ref("HEAD")
-        return Path(ref_path).parts[-1]
+        try:
+            ref_path = self.storage.get_symbolic_ref("HEAD")
+            return Path(ref_path).parts[-1]
+        except NitRefNotFoundError:
+            return "master"
 
     def _get_editor_command(self, temp_file_path):
         editor = os.environ.get("EDITOR", "vi")
@@ -311,7 +314,7 @@ class NitRepository(Repository):
                 # Check for detached head
                 self.storage.get_object(branch_ref)
                 return branch_ref
-            except:
+            except NitExpectedError:
                 pass
             head_key = self.storage.get_ref(branch_ref)
         except NitRefNotFoundError:
@@ -322,6 +325,9 @@ class NitRepository(Repository):
         raise Exception("boo")
 
     def checkout(self, treeish):
+        # TODO: This should be done by comparing index
+        #       rather than working tree
+
         if not self.clean:
             raise NitUserError(
                 "The working tree has modifications!"
