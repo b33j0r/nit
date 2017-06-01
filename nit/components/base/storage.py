@@ -8,6 +8,7 @@ from nit.components.base.working_tree import BaseWorkingTree
 from nit.core.config import BaseConfigBuilder
 
 from nit.core.errors import NitUserError, NitRefNotFoundError
+from nit.core.objects.index import Index
 from nit.core.serialization import BaseSerializer
 from nit.core.storage import Storage
 from nit.core.log import getLogger
@@ -185,7 +186,7 @@ class BaseStorage(Storage):
         try:
             with open(self.paths.index_str, 'rb') as f:
                 s = self._serialization_cls(f)
-                return s.deserialize()
+                return s.deserialize_index(Index)
         except FileNotFoundError:
             return None
 

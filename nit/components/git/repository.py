@@ -2,11 +2,11 @@
 """
 """
 from nit.components.base.working_tree import BaseWorkingTree
+from nit.components.git.serialization import GitSerializer
 from nit.components.git.status import GitStatusFormatter
 from nit.components.git.storage import GitStorage
 from nit.components.nit.ignore import NitIgnoreStrategy
 from nit.components.nit.repository import NitRepository
-from nit.components.nit.serialization import NitSerializer
 from nit.core.log import getLogger
 from nit.core.status import BaseStatusStrategy
 
@@ -22,7 +22,7 @@ class GitRepository(NitRepository):
             self,
             paths,
             storage_cls=GitStorage,
-            serialization_cls=NitSerializer,
+            serialization_cls=GitSerializer,
             ignore_cls=NitIgnoreStrategy,
             status_cls=BaseStatusStrategy,
             status_format_cls=GitStatusFormatter,

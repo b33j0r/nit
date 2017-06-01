@@ -77,7 +77,7 @@ class NitSerializer(BaseSerializer):
         return index
 
     def serialize_blob(self, blob):
-        logger.trace("Serializing Blob")
+        #logger.trace("Serializing Blob")
 
         content = blob.content
         self.serialize_signature("blob", len(content))
