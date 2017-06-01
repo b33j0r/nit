@@ -55,6 +55,10 @@ class BaseStorage(Storage):
         self._mkdir(self.paths.refs)
         self._mkdir(self.paths.refs/"heads")
         self._mkdir(self.paths.refs/"tags")
+        self._mkdir(self.paths.repo/"hooks")
+        self._mkdir(self.paths.repo/"info")
+        with (self.paths.repo/"description").open('w') as f:
+            f.write('No description')
         try:
             self.get_symbolic_ref("HEAD")
         except NitRefNotFoundError:
@@ -65,9 +69,11 @@ class BaseStorage(Storage):
                 "{} {repository_name} "
                 "repository in {repository_path}"
             ).format(
-                ("Initialized empty"
-                 if new else
-                 "Reinitialized existing"),
+                (
+                    "Initialized empty"
+                    if new else
+                    "Reinitialized existing"
+                ),
                 repository_name=self.__class__.__name__.replace(
                     "Storage", ""
                 ),
@@ -113,13 +119,15 @@ class BaseStorage(Storage):
         with ref_path.open('rb') as file:
             b = file.read()
             symbolic_ref = b.decode()
+            if symbolic_ref.startswith('ref: '):
+                symbolic_ref = symbolic_ref[5:]
             return symbolic_ref
 
     def put_symbolic_ref(self, name, ref):
         ref_path = self.paths.repo/name
         with ref_path.open('wb') as file:
             b = ref.encode()
-            file.write(b)
+            file.write(b"ref: " + b)
 
     def get_object(self, keyish):
         file_path = self.paths.get_object_path(

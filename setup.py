@@ -40,8 +40,10 @@ setup(
         "Topic :: Utilities",
         "License :: OSI Approved :: BSD License",
     ],
-    scripts=[
-        "bin/nit",
-        "bin/nit-git"
-    ]
+    entry_points={
+        'console_scripts': [
+            'nit = nit.components.nit.cli:main',
+            'nit-git = nit.components.git.cli:main',
+        ]
+    },
 )

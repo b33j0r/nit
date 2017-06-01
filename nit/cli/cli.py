@@ -11,7 +11,7 @@ from pathlib import Path
 from nit.core.log import getLogger
 from nit.core.errors import NitExpectedError, NitUnexpectedError
 from nit.core.paths import BasePaths
-
+from nit.core.repository_factory import get_repository_cls
 
 logger = getLogger(__name__)
 
@@ -139,7 +139,7 @@ class ParserFactory(metaclass=ABCMeta):
     Builds an argparse parser for a nit cli.
     """
 
-    def build_parser(self, repository, **kwargs):
+    def build_parser(self, **kwargs):
         pass
 
 
@@ -165,10 +165,8 @@ class BaseParserFactory(ParserFactory):
         Initializes an empty repository
     """
 
-    def build_parser(self, repository, **kwargs):
+    def build_parser(self, **kwargs):
         """
-
-        :param repository:
         :return:
         """
 
@@ -176,6 +174,12 @@ class BaseParserFactory(ParserFactory):
         parser = argparse.ArgumentParser(
             description=self.DEFAULT_DESCRIPTION
         )
+
+        parser.set_defaults(
+            driver='nit',
+            func=''
+        )
+
         subparsers = parser.add_subparsers()
 
         # Sub-parser for 'test' command
@@ -190,7 +194,7 @@ class BaseParserFactory(ParserFactory):
             help=self.DEFAULT_INIT_HELP
         )
         parser_init.set_defaults(
-            func=repository.init
+            func="init"
         )
 
         # Sub-parser for 'config' command
@@ -200,7 +204,7 @@ class BaseParserFactory(ParserFactory):
                  "~/.nitconfig (if --global is specified)"
         )
         parser_config.set_defaults(
-            func=repository.config
+            func="config"
         )
         parser_config.add_argument(
             "--global",
@@ -219,7 +223,7 @@ class BaseParserFactory(ParserFactory):
                  "the index, and the working tree"
         )
         parser_status.set_defaults(
-            func=repository.status
+            func="status"
         )
 
         # Sub-parser for 'cat' command
@@ -228,7 +232,7 @@ class BaseParserFactory(ParserFactory):
             help="print the contents of an object in the database"
         )
         parser_cat.set_defaults(
-            func=repository.cat
+            func="cat"
         )
         parser_cat.add_argument("key")
 
@@ -238,7 +242,7 @@ class BaseParserFactory(ParserFactory):
             help="report the diff between the HEAD commit and the working tree"
         )
         parser_cat.set_defaults(
-            func=repository.diff
+            func="diff"
         )
 
         # Sub-parser for 'branch' command
@@ -247,7 +251,7 @@ class BaseParserFactory(ParserFactory):
             help="get the current branch or create a new one"
         )
         parser_branch.set_defaults(
-            func=repository.branch
+            func="branch"
         )
         parser_branch.add_argument(
             "name", nargs="?",
@@ -261,7 +265,7 @@ class BaseParserFactory(ParserFactory):
                  "index (the next tree to be committed)"
         )
         parser_add.set_defaults(
-            func=repository.add
+            func="add"
         )
         parser_add.add_argument(
             '--force',
@@ -276,7 +280,7 @@ class BaseParserFactory(ParserFactory):
                  "HEAD to the resulting object"
         )
         parser_commit.set_defaults(
-            func=repository.commit
+            func="commit"
         )
         parser_commit.add_argument("-m", "--message", type=str)
 
@@ -286,7 +290,7 @@ class BaseParserFactory(ParserFactory):
             help="print the HEAD commit and its ancestors"
         )
         parser_log.set_defaults(
-            func=repository.log
+            func="log"
         )
 
         # Sub-parser for 'checkout' command
@@ -296,7 +300,7 @@ class BaseParserFactory(ParserFactory):
                  "repository's history"
         )
         parser_checkout.set_defaults(
-            func=repository.checkout
+            func="checkout"
         )
         parser_checkout.add_argument("treeish")
 
@@ -319,19 +323,28 @@ def parser_test(*args, **kwargs):
     raise NitLoggerTestException()
 
 
-def run(args):
+def run(repository, args):
     status_code = 0
     try:
-        args.func(parsed_args=args)
+        if not getattr(args, 'func', None):
+            logger.warn('namespace: %s', args)
+        if isinstance(args.func, str):
+            func = getattr(repository, args.func, None)
+        else:
+            func = args.func
+        if func:
+            func(parsed_args=args)
+        else:
+            raise NitUnexpectedError('Command has no associated func action!')
 
     except NitExpectedError as exc:
         status_code = 1
-        logger.error(str(exc))
-        logger.exception("Expected Error")
+        logger.error(exc)
+        logger.debug("Expected Error", exc_info=1)
 
     except NitUnexpectedError as exc:
         status_code = 2
-        logger.critical(str(exc))
+        logger.critical(exc)
 
     except NitLoggerTestException as exc:
         logger.setLevel("DEBUG")
@@ -360,18 +373,17 @@ def setup(args, name):
         )
     )
 
-    # TODO: refactor this into a RepositoryFactory pattern
-    from nit.components.nit.repository import NitRepository
+    parser_factory = BaseParserFactory()
+    parser = parser_factory.build_parser()
+    args = parser.parse_args(args)
+    repository_cls = get_repository_cls(name)
 
     cwd = Path(os.getcwd())
-    nit_paths = BasePaths(cwd)
-    nit_repo = NitRepository(nit_paths)
+    nit_paths = BasePaths(cwd, repo_name="." + name)
+    nit_repo = repository_cls(nit_paths)
     repo = RepositoryProxy(nit_repo)
-    parser_factory = BaseParserFactory()
-    parser = parser_factory.build_parser(repo)
 
-    args = parser.parse_args(args)
-    return args
+    return repo, args
 
 
 def cleanup(status_code):
@@ -386,27 +398,24 @@ def cleanup(status_code):
 
 
 def main(*args, name="nit"):
-    args = args or sys.argv
+    args = args or sys.argv[1:]
 
     try:
-        args = setup(args, name)
+        repo, args = setup(args, name)
     except SystemExit as exc:
         return exc.code
     except:
-        logger.critical("Command-line interface "
-                        "failed during setup()")
+        logger.critical("Command-line interface failed during setup()")
         return -1
 
     try:
-        status_code = run(args)
+        status_code = run(repo, args)
     except:
-        logger.critical("Command-line interface "
-                        "failed during run()")
+        logger.critical("Command-line interface failed during run()")
         return -2
 
     try:
         return cleanup(status_code)
     except:
-        logger.critical("Command-line interface "
-                        "failed during cleanup()")
+        logger.critical("Command-line interface failed during cleanup()")
         return -3

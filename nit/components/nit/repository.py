@@ -73,6 +73,7 @@ class NitRepository(Repository):
         )
 
     def config(self, set_value=None, use_global=False):
+
         config = self.storage.get_config()
 
         if use_global:
@@ -80,20 +81,17 @@ class NitRepository(Repository):
         else:
             config = config.repo_config
 
-        if not 0 <= len(set_value) <= 2:
-            raise NitUserError("config accepts 0-2 arguments")
-
-        if len(set_value) == 0:
+        if not set_value:
             logger.info(config)
             return config
 
-        try:
-            key, value = set_value
+        key, value = (set_value[0], " ".join(set_value[1:]))
+
+        if value:
             config[key] = value
             config.save()
             logger.info(value)
-        except ValueError:
-            key = set_value[0]
+        else:
             value = config.get(key)
             if value:
                 logger.info(value)
@@ -209,9 +207,16 @@ class NitRepository(Repository):
 
     def commit(self, message=None):
         config = self.storage.get_config()
+
+        user_name = config.get('user.name')
+        user_email = config.get('user.email')
+
+        if not (user_name and user_email):
+            raise NitUserError("user.name and user.email must be set in config")
+
         author_str = "{} <{}>".format(
-            config["user.name"],
-            config["user.email"]
+            user_name,
+            user_email,
         )
         index = self.storage.get_index()
         if not index:

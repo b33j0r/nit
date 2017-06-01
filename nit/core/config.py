@@ -40,7 +40,10 @@ class Config(Mapping):
         """
         if key in self._key_set:
             return self.get(key, default, recursive)
-        return self._parent.get(key, default, recursive)
+        try:
+            return self._parent.get(key, default, recursive)
+        except TypeError:
+            return self._parent.get(key, default)
 
     def set(self, key, value):
         raise TypeError(
@@ -80,8 +83,8 @@ class Config(Mapping):
         return iter(sorted(self.key_set))
 
     def __getitem__(self, item):
-        value = self.get(item, default=RuntimeError)
-        if value == RuntimeError:
+        value = self.get(item)
+        if not value:
             raise KeyError(item)
         return value
 
