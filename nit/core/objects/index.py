@@ -14,7 +14,10 @@ class Index(Tree):
         storage.put_index(self)
 
     def accept_serializer(self, serializer):
-        serializer.serialize_index(self)
+        raise NotImplementedError(
+            'serialize_index should be called directly'
+        )
+        # serializer.serialize_index(self, None)
 
     @classmethod
     def accept_deserializer(cls, deserializer):

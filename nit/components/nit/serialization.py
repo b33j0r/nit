@@ -61,7 +61,7 @@ class NitSerializer(BaseSerializer):
         obj_len = int(obj_len)
         return obj_len, obj_type
 
-    def serialize_index(self, index):
+    def serialize_index(self, index, paths):
         logger.trace("Serializing Index")
 
         content = self._serialize_tree_to_bytes(index)
@@ -77,7 +77,7 @@ class NitSerializer(BaseSerializer):
         return index
 
     def serialize_blob(self, blob):
-        #logger.trace("Serializing Blob")
+        # logger.trace("Serializing Blob")
 
         content = blob.content
         self.serialize_signature("blob", len(content))

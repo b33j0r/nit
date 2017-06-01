@@ -104,7 +104,7 @@ class BaseSerializer(Serializer):
     def _deserialize_get_obj_cls(self):
         raise NotImplementedError("_deserialize_get_obj_cls")
 
-    def serialize_index(self, index):
+    def serialize_index(self, index, paths):
         raise NotImplementedError("serialize_index")
 
     def deserialize_index(self, index_cls):

@@ -53,7 +53,7 @@ class BaseWorkingTree(WorkingTree):
             contents = file.read()
             blob = Blob(contents)
             key = self.storage.get_object_key_for(blob)
-            node = TreeNode(rp, key)
+            node = TreeNode(rp, key, p.stat())
         return node
 
     def walk(self):

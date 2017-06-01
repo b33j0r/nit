@@ -193,7 +193,7 @@ class BaseStorage(Storage):
     def put_index(self, index):
         with self.paths.index.open('wb') as file:
             s = self._serialization_cls(file)
-            s.serialize(index)
+            s.serialize_index(index, self.paths)
 
     def get_working_tree(self):
         return self._working_tree_cls(self)

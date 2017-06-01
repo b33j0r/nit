@@ -140,7 +140,8 @@ class NitRepository(Repository):
                 )
                 node = Tree.Node(
                     relative_file_path,
-                    key
+                    key,
+                    file_path.stat(),
                 )
                 index.add_node(node)
 

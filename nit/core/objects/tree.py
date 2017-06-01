@@ -15,9 +15,10 @@ class TreeNode:
     """
     """
 
-    def __init__(self, relative_file_path, key):
+    def __init__(self, relative_file_path, key, stat):
         self.path = Path(relative_file_path)
         self.key = key
+        self.stat = stat
 
     def __str__(self):
         return "{} {}".format(
@@ -118,3 +119,6 @@ class Tree(Treeish):
 
     def diff(self, other):
         return BaseTreeDiff(self, other)
+
+    def __len__(self):
+        return len(self._nodes)
